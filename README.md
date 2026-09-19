@@ -174,4 +174,4 @@ revert it, and left to the user.
 
 ## License
 
-No license has been chosen yet; until one is added, all rights are reserved by the author.
+Licensed under the [Apache License, Version 2.0](LICENSE).
