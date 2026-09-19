@@ -67,6 +67,57 @@ pub fn bootstrap_median_ci(data: &[f64], resamples: usize, alpha: f64, rng: &mut
     )
 }
 
+/// Ordinary least squares `y = slope * x + intercept`.
+pub fn linear_fit(x: &[f64], y: &[f64]) -> (f64, f64) {
+    assert_eq!(x.len(), y.len());
+    let n = x.len() as f64;
+    let (mx, my) = (x.iter().sum::<f64>() / n, y.iter().sum::<f64>() / n);
+    let sxx: f64 = x.iter().map(|a| (a - mx) * (a - mx)).sum();
+    let sxy: f64 = x.iter().zip(y).map(|(a, b)| (a - mx) * (b - my)).sum();
+    let slope = if sxx == 0.0 { 0.0 } else { sxy / sxx };
+    (slope, my - slope * mx)
+}
+
+/// Percentile bootstrap (95 %) of the least-squares slope, resampling (x, y) pairs.
+pub fn bootstrap_slope_ci(x: &[f64], y: &[f64], resamples: usize, rng: &mut Rng) -> (f64, f64) {
+    let n = x.len();
+    let mut slopes = Vec::with_capacity(resamples);
+    let (mut bx, mut by) = (vec![0.0; n], vec![0.0; n]);
+    for _ in 0..resamples {
+        for i in 0..n {
+            let j = rng.below(n as u64) as usize;
+            bx[i] = x[j];
+            by[i] = y[j];
+        }
+        slopes.push(linear_fit(&bx, &by).0);
+    }
+    slopes.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    (percentile_sorted(&slopes, 0.025), percentile_sorted(&slopes, 0.975))
+}
+
+/// A discontinuity of a piecewise-linear curve between two consecutive sample points.
+#[derive(Clone, Debug)]
+pub struct Jump {
+    pub lo: usize,
+    pub hi: usize,
+    pub size: f64,
+}
+
+/// Jumps of `t(n)` larger than `min_size` above the trend given by the slope of the last six points.
+pub fn jumps(ns: &[usize], t: &[f64], min_size: f64) -> Vec<Jump> {
+    let m = t.len();
+    if m < 8 {
+        return Vec::new();
+    }
+    let slope = (t[m - 1] - t[m - 6]) / (ns[m - 1] as f64 - ns[m - 6] as f64);
+    (0..m - 1)
+        .filter_map(|i| {
+            let size = t[i + 1] - t[i] - slope * (ns[i + 1] - ns[i]) as f64;
+            (size > min_size).then_some(Jump { lo: ns[i], hi: ns[i + 1], size })
+        })
+        .collect()
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Summary {
     pub n: usize,
@@ -163,6 +214,28 @@ mod tests {
         let (lo, hi) = bootstrap_median_ci(&data, 500, 0.05, &mut Rng::new(3));
         assert!(lo <= m && m <= hi, "{lo} {m} {hi}");
         assert!(lo >= 100.0 && hi <= 106.0);
+    }
+
+    #[test]
+    fn linear_fit_recovers_line_and_ci_brackets_slope() {
+        let x: Vec<f64> = (0..40).map(|i| i as f64 / 10.0).collect();
+        let y: Vec<f64> = x.iter().enumerate().map(|(i, v)| 3.0 * v + 2.0 + if i % 2 == 0 { 0.05 } else { -0.05 }).collect();
+        let (m, b) = linear_fit(&x, &y);
+        assert!((m - 3.0).abs() < 0.05 && (b - 2.0).abs() < 0.1, "{m} {b}");
+        let (lo, hi) = bootstrap_slope_ci(&x, &y, 300, &mut Rng::new(4));
+        assert!(lo <= m && m <= hi && hi - lo < 0.2, "{lo} {m} {hi}");
+    }
+
+    #[test]
+    fn jump_detector_finds_the_step() {
+        let ns: Vec<usize> = (0..40).map(|i| i * 4).collect();
+        // slope 0.25 with a +20 step after n = 100
+        let t: Vec<f64> = ns.iter().map(|&n| 9.0 + 0.25 * n as f64 + if n > 100 { 20.0 } else { 0.0 }).collect();
+        let j = jumps(&ns, &t, 5.0);
+        assert_eq!(j.len(), 1, "{j:?}");
+        assert_eq!((j[0].lo, j[0].hi), (100, 104));
+        assert!((j[0].size - 20.0).abs() < 1e-9);
+        assert!(jumps(&ns, &ns.iter().map(|&n| n as f64 * 0.25).collect::<Vec<_>>(), 5.0).is_empty());
     }
 
     #[test]

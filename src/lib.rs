@@ -1,3 +1,4 @@
+pub mod a64;
 pub mod analysis;
 pub mod guard;
 pub mod output;
@@ -28,6 +29,12 @@ pub mod phys;
 pub mod pmu;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 pub mod prefetch;
+#[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+pub mod jit;
+#[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+pub mod branch;
+#[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+pub mod ooo;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 pub mod selftest;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
