@@ -1,0 +1,143 @@
+core 1, expected freq 2400000 kHz, CNTFRQ 54000000 Hz, 30 reps
+
+== 6.1 one-way cache-line transfer latency between cores (ns; cycles at the measured 2.4 GHz)
+  stlr_ldar (rows: initiator, columns: responder)
+           core 0         core 1         core 2         core 3      
+  core 0      -             69.4 ns/ 166c    72.4 ns/ 174c    69.7 ns/ 167c
+  core 1    72.2 ns/ 173c      -             68.8 ns/ 165c    71.5 ns/ 171c
+  core 2    72.4 ns/ 174c    71.6 ns/ 172c      -             68.9 ns/ 165c
+  core 3    69.0 ns/ 165c    72.5 ns/ 174c    70.2 ns/ 168c      -         
+  ldaddal_ldar (rows: initiator, columns: responder)
+           core 0         core 1         core 2         core 3      
+  core 0      -             69.6 ns/ 167c    69.5 ns/ 167c    69.3 ns/ 166c
+  core 1    69.2 ns/ 166c      -             69.8 ns/ 167c    69.5 ns/ 167c
+  core 2    69.3 ns/ 166c    69.7 ns/ 167c      -             69.7 ns/ 167c
+  core 3    69.6 ns/ 167c    69.1 ns/ 166c    69.4 ns/ 167c      -         
+
+== 6.1b the same matrix (stlr/ldar) on four different lines: one-way ns, rows = initiator, columns = responder
+  line 0:
+         -          69.7 ns      72.5 ns      71.0 ns  
+       70.5 ns        -          69.7 ns      71.7 ns  
+       72.4 ns      72.1 ns        -          68.9 ns  
+       69.3 ns      72.4 ns      71.2 ns        -      
+  line 1:
+         -          69.3 ns      72.4 ns      70.6 ns  
+       71.0 ns        -          68.7 ns      71.7 ns  
+       72.4 ns      70.9 ns        -          69.0 ns  
+       69.5 ns      72.4 ns      71.2 ns        -      
+  line 2:
+         -          67.7 ns      72.4 ns      70.3 ns  
+       70.2 ns        -          68.5 ns      72.3 ns  
+       72.4 ns      70.5 ns        -          68.6 ns  
+       69.8 ns      72.5 ns      71.2 ns        -      
+  line 3:
+         -          69.7 ns      72.5 ns      70.6 ns  
+       70.5 ns        -          69.7 ns      72.1 ns  
+       72.4 ns      69.1 ns        -          68.9 ns  
+       68.8 ns      72.4 ns      70.8 ns        -      
+
+== 6.2 store-to-load forwarding: cycles per dependent store + load pair (the loaded value feeds the next store)
+  baseline: str x / ldr x on another line (no overlap, no forwarding)    1.00 cycles
+  str x / ldr x (same address)                                      5.50 cycles
+  str x / ldr w (low half)                                          5.50 cycles
+  str x / ldr w (high half, +4)                                     5.50 cycles
+  str x / ldrb (byte 0)                                             5.50 cycles
+  str x / ldrb (byte 7)                                            10.56 cycles
+  str x / ldrh (bytes 2-3)                                         10.56 cycles
+  str w / ldr w (same address)                                      5.50 cycles
+  str w / ldr x (load larger than store)                            5.50 cycles
+  strb / ldr x (load larger than store)                            10.52 cycles
+  str x [p] / ldr x [p+4] (straddles the store)                     5.50 cycles
+  stp x,x / ldr x (first half)                                      6.35 cycles
+  stp x,x / ldr x (second half)                                     6.36 cycles
+  str w [p], str w [p+4] / ldr x [p] (two stores, one load)         5.31 cycles
+  str x / ldr x at +4 (misaligned within a line)                    5.50 cycles
+  str x / ldr x at +60 (crosses a 64-byte line)                     7.14 cycles
+  str x / ldr x crossing a 16 KiB page                             15.83 cycles
+  str q / ldr q (same address)                                      6.80 cycles
+  str q / ldr d (low half)                                          6.78 cycles
+  str q / ldr d (high half)                                         6.80 cycles
+  str d / ldr q (load larger than store)                            5.51 cycles
+  str q / ldr q at +8 (misaligned 16 B)                             5.61 cycles
+  str q / ldr q at +56 (crosses a 64-byte line)                     8.51 cycles
+
+== 6.3 unaligned accesses: cycles per access (independent accesses, L1-resident) and L1D accesses / L1 TLB lookups per access
+  load 8 B:
+    line offset 0                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 1                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 4                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 7                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 8                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 9                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 12                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 15                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 16                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 24                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 28                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 31                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 32                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 48                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 56                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 57                                    1.078 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 60                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 63                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    crosses a 4 KiB boundary inside a 16 KiB page     1.700 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    crosses a 16 KiB page boundary                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+  store 8 B:
+    line offset 0                                     1.500 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 1                                     1.786 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 4                                     1.500 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 7                                     1.786 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 8                                     1.500 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 9                                     3.400 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 12                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 15                                    3.400 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 16                                    1.501 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 24                                    1.500 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 28                                    2.000 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 31                                    3.600 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 32                                    1.500 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 48                                    1.500 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 56                                    1.500 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 57                                    4.000 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 60                                    2.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 63                                    4.000 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    crosses a 4 KiB boundary inside a 16 KiB page    11.001 cycles  L1D 2.01  TLB 2.01  mem 2.01
+    crosses a 16 KiB page boundary                   12.001 cycles  L1D 2.33  TLB 2.33  mem 2.33
+  load 16 B:
+    line offset 0                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 1                                     1.078 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 4                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 8                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 12                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 15                                    1.039 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 16                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 24                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 32                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 40                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 48                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 49                                    1.078 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 56                                    1.078 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 60                                    1.078 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 63                                    1.078 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    crosses a 4 KiB boundary inside a 16 KiB page     1.700 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    crosses a 16 KiB page boundary                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+  store 16 B:
+    line offset 0                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 1                                     3.400 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 4                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 8                                     1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 12                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 15                                    3.400 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 16                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 24                                    2.000 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 32                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 40                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 48                                    1.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 49                                    4.000 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 56                                    2.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 60                                    2.001 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    line offset 63                                    4.000 cycles  L1D 1.00  TLB 1.00  mem 1.00
+    crosses a 4 KiB boundary inside a 16 KiB page    11.001 cycles  L1D 2.00  TLB 2.00  mem 2.00
+    crosses a 16 KiB page boundary                   11.001 cycles  L1D 2.00  TLB 2.00  mem 2.00
+multicore: 5070 reps, 0 flagged invalid; data in results/2026-09-19
