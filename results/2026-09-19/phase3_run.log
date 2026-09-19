@@ -1,0 +1,175 @@
+core 1, expected freq 2400000 kHz, CNTFRQ 54000000 Hz, 30 reps
+stride sweep: round 1/3 done
+stride sweep: round 2/3 done
+stride sweep: round 3/3 done
+
+== stride sweep, L2-resident (255 KiB): random reference 4.833 ns (11.6 cycles)
+   stride        ns    ratio     L1r     L2r  L3r/ll     bus    walk
+        1     1.903    0.394   0.056   0.000   0.000    0.01   0.000
+        2     4.950    1.024   0.965   0.000   0.000    0.01   0.000
+        3     3.614    0.748   0.621   0.001   0.000    0.01   0.000
+        4     4.788    0.991   0.915   0.000   0.000    0.01   0.000
+        5     4.226    0.874   0.846   0.001   0.000    0.01   0.000
+        6     4.892    1.012   0.945   0.001   0.000    0.01   0.000
+        8     4.477    0.926   0.820   0.000   0.000    0.01   0.000
+       10     3.684    0.762   0.568   0.000   0.000    0.01   0.000
+       12     4.356    0.901   0.787   0.001   0.000    0.01   0.000
+       16     4.608    0.954   0.862   0.000   0.000    0.01   0.000
+       18     4.668    0.966   0.882   0.001   0.000    0.01   0.000
+       20     4.773    0.987   0.915   0.001   0.000    0.01   0.000
+       21     4.646    0.961   1.000   0.001   0.000    0.01   0.000
+       22     5.063    1.048   1.000   0.001   0.000    0.01   0.000
+       23     4.649    0.962   1.000   0.001   0.000    0.01   0.000
+       24     5.063    1.048   1.000   0.001   0.000    0.01   0.000
+       32     5.060    1.047   1.000   0.001   0.000    0.01   0.000
+       48     5.009    1.036   1.000   0.001   0.000    0.01   0.000
+       64     5.058    1.047   1.000   0.001   0.000    0.01   0.000
+       96     5.055    1.046   1.000   0.001   0.000    0.01   0.000
+      128     5.056    1.046   1.000   0.001   0.000    0.01   0.000
+       -1     1.901    0.393   0.056   0.000   0.000    0.01   0.000
+       -2     4.949    1.024   0.965   0.000   0.000    0.01   0.000
+       -4     4.804    0.994   0.919   0.001   0.000    0.01   0.000
+       -8     4.427    0.916   0.804   0.001   0.000    0.01   0.000
+      -16     4.682    0.969   0.890   0.001   0.000    0.01   0.000
+      -64     5.058    1.046   1.000   0.001   0.000    0.01   0.000
+   random     4.833    1.000   1.000   0.001   0.000    0.01   0.000
+
+== stride sweep, L3-resident (1023 KiB): random reference 15.132 ns (36.3 cycles)
+   stride        ns    ratio     L1r     L2r  L3r/ll     bus    walk
+        1     2.064    0.136   0.064   0.000   0.000    6.84   0.000
+        2     5.828    0.385   0.990   0.004   0.000    6.73   0.000
+        3     4.748    0.314   0.730   0.135   0.000    5.89   0.000
+        4     6.506    0.430   0.977   0.060   0.000    6.79   0.000
+        5     6.659    0.440   0.852   0.286   0.000    6.12   0.000
+        6     7.810    0.516   0.974   0.269   0.000    6.07   0.000
+        8     6.537    0.432   0.696   0.286   0.000    6.46   0.000
+       10     5.755    0.380   0.533   0.210   0.000    6.26   0.000
+       12     6.577    0.435   0.753   0.243   0.000    6.32   0.000
+       16     6.011    0.397   0.668   0.145   0.000    6.99   0.000
+       18     4.387    0.290   0.583   0.013   0.000    6.85   0.000
+       20     5.459    0.361   0.697   0.147   0.000    6.63   0.000
+       21     4.348    0.287   0.685   0.048   0.000    6.94   0.000
+       22    15.148    1.001   1.000   0.876   0.000    8.23   0.000
+       23    14.326    0.947   1.000   0.919   0.000    8.21   0.000
+       24    15.987    1.056   1.000   0.944   0.000    8.62   0.000
+       32    15.689    1.037   1.000   0.914   0.000    8.14   0.000
+       48    16.286    1.076   1.000   0.964   0.000    9.03   0.000
+       64    15.830    1.046   1.000   0.915   0.000    8.38   0.000
+       96    16.170    1.069   1.000   0.943   0.000    8.36   0.000
+      128    15.878    1.049   1.000   0.905   0.000    7.86   0.000
+      256    16.589    1.096   1.000   0.902   0.000    7.91   0.000
+      512    15.890    1.050   1.000   0.932   0.000    7.88   0.000
+       -1     2.061    0.136   0.064   0.000   0.000    6.66   0.000
+       -2     5.876    0.388   0.989   0.006   0.000    6.64   0.000
+       -4     7.674    0.507   0.960   0.229   0.000    6.65   0.000
+       -8     6.544    0.432   0.696   0.284   0.000    6.47   0.000
+      -16     4.960    0.328   0.750   0.004   0.000    6.97   0.000
+      -64    15.773    1.042   1.000   0.911   0.000    8.29   0.000
+   random    15.132    1.000   1.000   0.925   0.000    7.76   0.000
+
+== stride sweep, DRAM (65535 KiB): random reference 110.209 ns (264.2 cycles)
+   stride        ns    ratio     L1r     L2r  L3r/ll     bus    walk
+        1     4.561    0.041   0.869   0.927   0.983    8.00   0.004
+        2    21.724    0.197   0.963   0.226   1.015    8.81   0.008
+        3    21.831    0.198   0.758   0.295   1.002    8.16   0.011
+        4    26.211    0.238   0.732   0.275   1.007    8.73   0.014
+        5    26.284    0.238   0.709   0.347   1.023    8.33   0.018
+        6    29.833    0.271   0.777   0.350   1.017    8.35   0.021
+        8    28.124    0.255   0.703   0.370   1.004    8.10   0.029
+       10    25.816    0.234   0.565   0.279   1.028    8.38   0.036
+       12    27.581    0.250   0.764   0.373   1.070    8.67   0.043
+       16    10.156    0.092   0.826   0.352   1.023    8.27   0.057
+       18    15.017    0.136   0.762   0.303   1.097    8.97   0.064
+       20    19.579    0.178   0.804   0.341   1.133    9.23   0.071
+       21    28.783    0.261   0.847   0.425   1.168    9.57   0.075
+       22   101.699    0.923   1.000   1.010   1.262   10.29   0.080
+       23   101.234    0.919   1.000   1.011   1.257   10.28   0.084
+       24   102.574    0.931   1.000   1.003   1.296   10.39   0.087
+       32   102.682    0.932   1.000   1.001   1.146    9.18   0.116
+       48   103.051    0.935   1.000   1.003   1.267   10.15   0.176
+       64   102.898    0.934   1.000   1.001   1.216    9.77   0.237
+       96   103.423    0.938   1.000   1.003   1.290   10.37   0.356
+      128   103.575    0.940   1.000   1.001   1.200    9.65   0.477
+      256   105.938    0.961   1.000   1.001   1.179    9.53   0.941
+      512   112.170    1.018   1.000   1.002   1.215    9.85   0.973
+     1024   112.472    1.021   1.000   1.004   1.340   10.93   0.990
+     4096   112.738    1.023   1.000   1.007   1.233   10.41   0.979
+       -1     4.644    0.042   0.870   0.928   0.983    8.00   0.004
+       -2    26.189    0.238   0.955   0.283   1.021    8.83   0.007
+       -4    31.159    0.283   0.797   0.343   1.003    8.84   0.014
+       -8    28.130    0.255   0.707   0.364   1.027    8.26   0.029
+      -16    13.320    0.121   0.829   0.290   1.044    8.47   0.058
+      -64   103.013    0.935   1.000   1.001   1.199    9.63   0.236
+   random   110.209    1.000   1.000   1.008   1.158    9.45   0.693
+
+== interleaved +1-line streams (DRAM-sized, 8 MiB each), random DRAM reference 110.2 ns
+  S= 1:    3.657 ns/access (0.03 of random), bus 7.87/access, L2 refill 0.686
+  S= 2:    4.653 ns/access (0.04 of random), bus 8.97/access, L2 refill 0.315
+  S= 3:    7.523 ns/access (0.07 of random), bus 9.46/access, L2 refill 0.316
+  S= 4:    7.277 ns/access (0.07 of random), bus 10.31/access, L2 refill 0.368
+  S= 5:    5.734 ns/access (0.05 of random), bus 10.76/access, L2 refill 0.347
+  S= 6:    6.117 ns/access (0.06 of random), bus 11.38/access, L2 refill 0.425
+  S= 7:    6.092 ns/access (0.06 of random), bus 12.14/access, L2 refill 0.521
+  S= 8:    6.357 ns/access (0.06 of random), bus 12.77/access, L2 refill 0.599
+  S= 9:    6.607 ns/access (0.06 of random), bus 13.36/access, L2 refill 0.671
+  S=10:    7.086 ns/access (0.06 of random), bus 13.79/access, L2 refill 0.727
+  S=12:    7.363 ns/access (0.07 of random), bus 14.44/access, L2 refill 0.813
+  S=14:    7.791 ns/access (0.07 of random), bus 14.77/access, L2 refill 0.855
+  S=16:    9.205 ns/access (0.08 of random), bus 23.81/access, L2 refill 0.880
+  S=17:   29.704 ns/access (0.27 of random), bus 8.67/access, L2 refill 0.307
+  S=18:   86.580 ns/access (0.79 of random), bus 8.51/access, L2 refill 0.871
+  S=19:   59.995 ns/access (0.54 of random), bus 10.23/access, L2 refill 0.777
+  S=20:   72.135 ns/access (0.65 of random), bus 9.23/access, L2 refill 0.793
+  S=24:   81.946 ns/access (0.74 of random), bus 8.74/access, L2 refill 0.860
+  S=32:   85.740 ns/access (0.78 of random), bus 8.68/access, L2 refill 0.900
+
+== cold streams: lines read on the bus beyond the n demanded (baseline = the n = 1 stream)
+  load  stride  1: baseline(n=1) bus 13.5 ll 1.02 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:0.8/0.7 n=3:1.6/1.5 n=4:10.6/10.0 n=6:14.6/14.0 n=8:17.6/16.8 n=12:15.3/14.5 n=16:13.5/11.5 n=24:24.9/23.0 n=32:35.7/32.8 n=48:40.5/38.8 n=64:39.9/37.3 n=96:40.9/37.7 n=128:40.3/36.3 n=192:39.3/35.7 n=256:40.2/35.1
+  load  stride  2: baseline(n=1) bus 15.4 ll 1.02 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:0.5/0.7 n=3:1.4/1.4 n=4:4.9/4.7 n=6:8.0/7.8 n=8:10.2/10.0 n=12:12.8/12.5 n=16:14.8/13.1 n=24:15.0/14.6 n=32:14.6/14.0 n=48:15.2/14.4 n=64:15.1/14.2 n=96:15.0/14.0 n=128:15.4/14.1 n=192:15.6/14.9 n=256:15.9/14.6
+  load  stride  3: baseline(n=1) bus 13.7 ll 1.00 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:0.7/0.7 n=3:1.6/1.5 n=4:5.1/4.9 n=6:8.1/7.6 n=8:9.9/9.5 n=12:14.0/13.0 n=16:15.5/13.0 n=24:15.4/14.1 n=32:15.6/13.9 n=48:15.6/13.8 n=64:15.6/13.6 n=96:16.0/13.8 n=128:16.8/14.9 n=192:16.7/13.5 n=256:16.7/13.4
+  load  stride  4: baseline(n=1) bus 15.7 ll 1.27 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:0.5/0.5 n=3:1.2/1.2 n=4:4.5/4.4 n=6:7.2/7.0 n=8:8.7/8.5 n=12:12.6/12.2 n=16:15.6/13.7 n=24:16.1/14.7 n=32:15.4/14.8 n=48:15.4/14.7 n=64:15.4/14.8 n=96:15.4/15.1 n=128:15.9/15.0 n=192:16.2/16.1 n=256:16.5/16.5
+  load  stride  8: baseline(n=1) bus 13.7 ll 1.02 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:0.8/0.7 n=3:0.9/0.9 n=4:1.0/0.9 n=6:6.7/6.6 n=8:7.6/7.4 n=12:12.0/11.6 n=16:14.5/13.8 n=24:17.9/14.2 n=32:15.7/15.6 n=48:15.8/15.8 n=64:16.1/16.1 n=96:16.3/16.2 n=128:16.6/16.4 n=192:16.6/16.5 n=256:16.7/16.5
+  load  stride 16: baseline(n=1) bus 14.2 ll 1.02 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:-0.1/-0.0 n=3:-0.1/-0.0 n=4:-0.1/-0.1 n=6:6.1/5.8 n=8:-0.1/-0.1 n=12:-0.0/-0.0 n=16:-0.1/-0.0 n=24:14.1/11.0 n=32:15.4/15.3 n=48:15.8/15.4 n=64:16.2/15.9 n=96:16.4/16.1 n=128:16.4/16.1 n=192:17.3/17.1 n=256:17.3/16.2
+  load  stride -1: baseline(n=1) bus 15.9 ll 2.00 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:-0.3/-1.0 n=3:0.7/0.0 n=4:5.7/5.0 n=6:14.0/13.0 n=8:18.5/17.4 n=12:18.1/17.2 n=16:17.0/15.7 n=24:25.0/23.6 n=32:33.0/30.9 n=48:41.0/39.1 n=64:40.4/38.6 n=96:41.1/38.8 n=128:40.0/37.6 n=192:39.9/37.3 n=256:30.3/27.5
+  load  stride -2: baseline(n=1) bus 16.0 ll 1.41 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:-0.2/-0.4 n=3:0.6/0.4 n=4:4.8/4.0 n=6:7.3/6.7 n=8:9.1/8.1 n=12:14.2/12.8 n=16:15.4/12.8 n=24:15.2/13.5 n=32:14.9/13.1 n=48:15.6/12.9 n=64:15.4/11.7 n=96:15.7/12.3 n=128:16.4/12.4 n=192:16.7/11.2 n=256:16.6/12.1
+  store stride  1: baseline(n=1) bus 16.0 ll 1.83 | extra lines (bus/8, ll): n=1:0.0/0.0 n=2:-0.2/-0.7 n=3:-0.0/-0.6 n=4:9.4/8.3 n=6:11.3/9.6 n=8:12.3/10.5 n=12:13.4/11.0 n=16:11.5/10.2 n=24:8.8/7.0 n=32:7.9/6.1 n=48:7.9/6.1 n=64:-0.1/-2.3 n=96:8.3/5.7 n=128:-0.2/-2.8 n=192:-0.2/-3.1 n=256:-0.3/-2.9
+
+physical frame numbers available (root)
+  CMA buffer: 32 MiB physically contiguous by construction (physical alignment unknown; 2 MiB not tested)
+
+== boundaries: 16-line cold streams; extra lines read on the bus = (bus - baseline(n=1))/8 - 15 demanded
+  pool/B=4096        asc :  ends_at_boundary: 17.2  crosses_boundary: 24.6  mid_block: 14.9  (97536 candidates)
+  pool/B=4096        desc:  ends_at_boundary: 16.6  crosses_boundary: 24.7  mid_block: 14.1  (97536 candidates)
+  pool/B=16384/noncontig asc :  ends_at_boundary: 14.9  crosses_boundary: 24.9  mid_block: 23.6  (24384 candidates)
+  pool/B=16384/noncontig desc:  ends_at_boundary: 14.4  crosses_boundary: 24.8  mid_block: 23.5  (24384 candidates)
+  pool/B=16384/contig: only 0 candidate boundaries, skipped
+  pool/B=65536/noncontig asc :  ends_at_boundary: 14.1  crosses_boundary: 25.3  mid_block: 24.2  (6096 candidates)
+  pool/B=65536/noncontig desc:  ends_at_boundary: 14.4  crosses_boundary: 24.9  mid_block: 23.4  (6096 candidates)
+  pool/B=65536/contig: only 0 candidate boundaries, skipped
+  pool/B=2097152/noncontig asc :  ends_at_boundary: 12.8  crosses_boundary: 24.7  mid_block: 24.6  (254 candidates)
+  pool/B=2097152/noncontig desc:  ends_at_boundary: 14.3  crosses_boundary: 24.8  mid_block: 26.0  (254 candidates)
+  pool/B=2097152/contig: only 0 candidate boundaries, skipped
+  cma/B=4096         asc :  ends_at_boundary: 17.0  crosses_boundary: 24.4  mid_block: 14.3  (6120 candidates)
+  cma/B=4096         desc:  ends_at_boundary: 16.4  crosses_boundary: 24.1  mid_block: 13.6  (6120 candidates)
+  cma/B=16384        asc :  ends_at_boundary: 13.7  crosses_boundary: 24.0  mid_block: 23.4  (2040 candidates)
+  cma/B=16384        desc:  ends_at_boundary: 13.3  crosses_boundary: 24.0  mid_block: 22.4  (2040 candidates)
+  cma/B=65536/phase=0K asc :  ends_at_boundary: 14.0  crosses_boundary: 24.0  mid_block: 24.7  (510 candidates)
+  cma/B=65536/phase=0K desc:  ends_at_boundary: 13.6  crosses_boundary: 24.0  mid_block: 25.8  (510 candidates)
+  cma/B=65536/phase=16K asc :  ends_at_boundary: 14.0  crosses_boundary: 23.8  mid_block: 24.3  (510 candidates)
+  cma/B=65536/phase=16K desc:  ends_at_boundary: 12.9  crosses_boundary: 23.5  mid_block: 25.9  (510 candidates)
+  cma/B=65536/phase=32K asc :  ends_at_boundary: 13.8  crosses_boundary: 23.8  mid_block: 24.5  (510 candidates)
+  cma/B=65536/phase=32K desc:  ends_at_boundary: 13.1  crosses_boundary: 23.5  mid_block: 25.2  (510 candidates)
+  cma/B=65536/phase=48K asc :  ends_at_boundary: 13.6  crosses_boundary: 24.1  mid_block: 24.6  (510 candidates)
+  cma/B=65536/phase=48K desc:  ends_at_boundary: 12.9  crosses_boundary: 23.9  mid_block: 25.6  (510 candidates)
+
+== stores (independent, table-driven, DRAM-sized): ns per store
+  stride      1:  15.617 ns/store (0.65 of random), bus 9.15/store, L2 refill 0.085
+  stride      2:  16.361 ns/store (0.68 of random), bus 9.12/store, L2 refill 0.295
+  stride      4:  17.932 ns/store (0.75 of random), bus 9.12/store, L2 refill 0.289
+  stride      8:  19.740 ns/store (0.82 of random), bus 9.11/store, L2 refill 0.281
+  stride     16:  21.578 ns/store (0.90 of random), bus 9.32/store, L2 refill 0.308
+  stride     32:  22.535 ns/store (0.94 of random), bus 9.74/store, L2 refill 0.373
+  stride     64:  23.257 ns/store (0.97 of random), bus 10.12/store, L2 refill 0.409
+  stride     -1:  15.437 ns/store (0.64 of random), bus 9.13/store, L2 refill 0.083
+  stride random:  24.057 ns/store (1.00 of random), bus 9.22/store, L2 refill 0.187
+prefetch: 9660 reps, 0 flagged invalid; data in results/2026-09-19
