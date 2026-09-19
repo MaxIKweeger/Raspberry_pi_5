@@ -245,3 +245,99 @@ le L1 (le L2 évite d'évincer les lignes présentes en L1). Le test ne permet p
   couverture) ; le score de référence est celui de `analysis_replacement_run{1,2}.txt`.
 - Exécution sous `sudo` (pagemap) : les fichiers de résultats créés par root ont été rendus à l'utilisateur (`chown`) ;
   aucun autre réglage système n'a été modifié en dehors du governor `performance` (restauré à `ondemand`).
+
+---
+
+# Phase 3 — préchargeurs
+
+Sources : `results/2026-09-19/prefetch_experiments.csv` (médianes poolées), `raw/prefetch.jsonl` (chaque répétition),
+`phase3_run.log`, `env_phase3.json`. Un run complet (30 répétitions par point en 3 tours d'ordre alterné), cœur 1, governor
+`performance` (restauré à `ondemand`), **9660 répétitions, 0 invalide**. Exécuté avec `sudo` (lecture de `pagemap` pour tenter de
+classer les frontières par contiguïté physique ; ce n'est pas nécessaire aux autres mesures). Figures : `docs/img/prefetch_*.png`
+(`scripts/plot_prefetch.py`).
+
+Aucun événement PMU spécifique au préchargeur n'est exposé : tout est déduit (a) du temps de chargements dépendants comparé
+à un ordre aléatoire sur le même jeu, (b) des lignes réellement lues sur le bus (`BUS_ACCESS` / 8 par ligne, `LL_CACHE_MISS_RD`).
+
+## Détection de stride (chaîne de chargements dépendants, lignes de 64 o, ordre du parcours = stride constant)
+
+Rapport = latence / latence d'un cycle aléatoire sur le même jeu (aléatoire : 4,83 ns L2 ; 15,13 ns L3 ; 110,2 ns DRAM).
+
+| Jeu (niveau qui sert les données) | ±1 ligne | strides 2 à 21 | strides ≥ 22 | Statut |
+|---|---|---|---|---|
+| L2 (256 Kio) | **0,39** = 1,9 ns ≈ 4,5 cycles (latence L1) | ≈ 1,0 ; dips non monotones à +3 (0,75), +5 (0,87), +10 (0,76) | 0,96–1,05 | mesuré |
+| L3 (1 Mio) | **0,14** (≈ 2,1 ns) | 0,29–0,52 (les deux sens) | 0,95–1,10 | mesuré |
+| DRAM (64 Mio) | **0,04** = 4,6 ns ≈ 11 cycles (latence L2) | 0,14–0,28 ; **+16 : 0,09**, −16 : 0,12 | 0,92–0,96 (1,02 dès 512 lignes : page walks) | mesuré |
+
+- **Stride maximal suivi : 21 lignes (1344 o) vers le haut ; 22 lignes (1408 o) n'est plus suivi** (rupture nette 0,26 → 0,92 en DRAM,
+  0,29 → 1,00 en L3), confiance haute ; dans le sens descendant −16 est suivi et −64 ne l'est pas (−17 à −63 non testés).
+- **Deux mécanismes séparés par la taille du jeu** : avec des données dans le L2, seul ±1 est accéléré (jusqu'à la latence L1) ⇒
+  préchargeur L1 de type ligne suivante/précédente ; les jeux L3 et DRAM voient un préchargeur à stride (jusqu'à 21 lignes) qui
+  ramène le coût vers 0,2–0,5 de l'aléatoire (déduit ; confiance moyenne : les deux préchargeurs ne sont pas isolés par compteur).
+- Dips non monotones à +3/+5/+10 en L2 et pic favorable à ±16 en DRAM : **observés, non expliqués**.
+
+## Nombre de flux entrelacés suivis (S flux +1 ligne, 8 Mio chacun, accès en tourniquet, DRAM)
+
+| S | 1 | 4 | 8 | 14 | 16 | 17 | 18 | 20 | 24 | 32 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ns/accès | 3,7 | 7,3 | 6,4 | 7,8 | 9,2 | **29,7** | 86,6 | 72,1 | 81,9 | 85,7 |
+| bus par ligne demandée (8 = pas de sur-lecture) | 7,9 | 10,3 | 12,8 | 14,8 | **23,8** | 8,7 | 8,5 | 9,2 | 8,7 | 8,7 |
+
+⇒ **jusqu'à 16 flux sont suivis**, dès 17 le préchargement s'effondre (latence proche de l'aléatoire, 110 ns) : **capacité ≈ 16 flux**
+(confiance haute ; S = 18–20 est bruité). Le préchargeur lit de plus en plus de lignes par ligne demandée quand S augmente (jusqu'à 23,8/8 ≈ 3× à S = 16).
+
+## Distance et degré (flux à froid de n lignes ; lignes lues sur le bus au-delà des n demandées)
+
+Méthode : n accès dépendants à froid (adresses neuves), compteur `BUS_ACCESS` / 8 moins la ligne de base (n = 1) moins n − 1.
+
+| Flux | Déclenchement | Avance à l'état permanent | Statut |
+|---|---|---|---|
+| +1 / −1 ligne | au **4ᵉ accès** (extra 1,6 à n = 3 → 10,6 à n = 4) | **≈ 40 lignes** (2,5 Kio) pour n ≥ 48 ; montée 10,6 (n=4), 17,6 (8), 24,9 (24), 35,7 (32), 40,5 (48) ; creux reproductible à n = 16 (13,5) | mesuré ; interprétation « avance » : déduit |
+| strides 2, 3, 4, 8 | au 4ᵉ–6ᵉ accès | **≈ 15–16 lignes** (indépendant du stride) | mesuré |
+| stride 16 | après 17–24 accès (0 jusqu’à n = 16 sauf un point isolé à n = 6 : 6,1 ; 14,1 à n = 24) | ≈ 16–17 lignes | mesuré |
+| stores +1 | au 4ᵉ accès (9,4) | 11–13 (n = 6–12) puis ≈ 8 (n = 32–48) ; **≈ 0 à n = 64, 128, 192, 256 mais 8,3 à n = 96** | mesuré ; irrégularité non expliquée |
+
+- Le degré de préchargement (nombre de lignes lues d'avance) est donc **≈ 40 lignes pour un flux séquentiel** et **≈ 15–16 pour les flux à stride** ;
+  plus le stride est grand, plus l'apprentissage demande d'accès.
+- Hypothèse pour l'irrégularité des stores : bascule du chemin d'écriture (voir phase 1, écritures plates sans lecture préalable) ; non testée.
+
+## Frontières (flux ascendants de 16 lignes à froid ; « extra » = lignes lues au-delà des 15 demandées)
+
+| Frontière | Fin exacte sur la frontière | Traverse la frontière | Fin au milieu du bloc (témoin) | Lecture |
+|---|---|---|---|---|
+| 4 Kio, à l'intérieur d'une page de 16 Kio | 17,2 | 24,6 | 14,9 | **pas d'arrêt à 4 Kio** (fin ≥ témoin) |
+| 16 Kio, mémoire physiquement contiguë (CMA) | **13,7** | 24,0 | 23,4 | **arrêt à la frontière de page de 16 Kio** : ≈ 10 lignes de moins |
+| 16 Kio, pages non contiguës (pool) | **14,9** | 24,9 | 23,6 | idem : la contiguïté physique ne change rien |
+| 64 Kio (4 phases d'alignement physique, CMA) | 13,6–14,0 | 23,8–24,1 | 24,3–24,7 | comme 16 Kio (chaque frontière de 64 Kio est aussi une frontière de 16 Kio) |
+| 2 Mio (pool) | 12,8 | 24,7 | 24,6 | idem ; alignement physique 2 Mio non testable |
+
+⇒ **le préchargeur ne franchit pas une frontière de page de 16 Kio (granule de traduction)**, même quand la mémoire physique est contiguë
+(déduit ; confiance moyenne), **mais continue si la demande traverse la frontière** (24–25 lignes extra, comme au milieu d'un bloc). Aucune limite
+supplémentaire à 64 Kio ni 2 Mio n'est visible (les flux qui traversent ces frontières se comportent comme ceux qui traversent 16 Kio).
+Le sens descendant donne les mêmes valeurs (13,3–14,4 à 16 Kio, 16,4–16,6 à 4 Kio). Résidus **non expliqués** : un flux qui finit exactement sur
+la frontière lit encore ≈ 13–15 lignes de trop, et le témoin « milieu de bloc » vaut 14,9 pour les blocs de 4 Kio contre 23,5 pour les blocs ≥ 16 Kio
+(hypothèse : dépend de la position dans la page de 16 Kio).
+
+## Stores contre loads (stores indépendants, adresses lues dans une table, jeu DRAM)
+
+| Stride (lignes) | +1 | −1 | 2 | 4 | 8 | 16 | 32 | 64 | aléatoire |
+|---|---|---|---|---|---|---|---|---|---|
+| ns par store | 15,6 | 15,4 | 16,4 | 17,9 | 19,7 | 21,6 | 22,5 | 23,3 | 24,1 |
+| rapport à l'aléatoire | 0,65 | 0,64 | 0,68 | 0,75 | 0,82 | 0,90 | 0,94 | 0,97 | 1,00 |
+
+Les stores en flux ±1 gagnent ≈ 35 %, le gain **décroît progressivement avec le stride** (contrairement aux loads, plats de 2 à 21 puis
+nuls) et ne montre pas de coupure à 21 ; pas de sur-lecture (≈ 9,1 accès bus par store, dont 1 pour la table). Les stores déclenchent bien un
+préchargement (flux à froid : 9,4 lignes d'avance dès le 4ᵉ store), moins profond que celui des loads (≈ 8 contre ≈ 40).
+Limite : les loads de cette mesure sont dépendants (latence) et les stores indépendants (débit) : la comparaison directe des ratios n'est qu'indicative.
+
+## Limites de la phase 3
+
+- Aucune preuve directe du niveau où arrive la ligne préchargée (L1, L2 ou L3) : déduit des latences (4,5 cycles ≈ L1, 11 cycles ≈ L2).
+- Les deux préchargeurs (L1 et L2/L3) ne sont pas isolés par des compteurs dédiés ; « deux mécanismes » est une déduction par taille de jeu.
+- Strides négatifs testés seulement à −1, −2, −4, −8, −16, −64 ; le seuil descendant exact reste inconnu.
+- Jeux L2/L3 : strides ≥ N/16 exclus (repliement) ; le stride 4096 lignes sur ces jeux n'est pas interprétable.
+- Frontières : la mémoire CMA (32 Mio) est contiguë par construction mais son adresse physique n'est pas lisible (pagemap ne renvoie rien
+  pour ce mapping) ; la phase d'alignement physique 64 Kio est balayée sur 4 valeurs ; 2 Mio physique non testé ; pas d'accès à une
+  paire de pages virtuellement adjacentes et physiquement contiguës dans le pool ordinaire (0 candidat).
+- Le dépassement mesuré via le bus inclut d'éventuelles lectures de tables de pages (base n = 1 soustraite).
+- Un seul run complet ; les creux (n = 16 en flux +1, stores à n = 64/128/192/256) ne sont pas répliqués indépendamment.

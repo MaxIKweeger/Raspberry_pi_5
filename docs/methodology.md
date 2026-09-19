@@ -1,7 +1,7 @@
 # Méthodologie
 
 Ce document décrit, par expérience : l'hypothèse, le principe, les biais possibles et les références.
-Il est complété à chaque phase. État actuel : phases 0, 1 et 2.
+Il est complété à chaque phase. État actuel : phases 0 à 3.
 
 ## Règles transverses (appliquées par `harness.rs`)
 
@@ -152,3 +152,44 @@ Les lignes cibles sont à l'offset de page 12288 (set L1 192), loin de la zone d
   jamais le L2. Sans back-invalidation le L2 finit par évincer la copie périmée de X puis les W lignes tiennent (0 miss) ;
   avec back-invalidation X sort du L1 à chaque éviction (1 miss par accès).
 - **Biais** : voir les résultats : la valeur intermédiaire (≈ 0,2) empêche de conclure.
+
+## Phase 3 — préchargeurs (`a76probe run --exp prefetch`; `--exp boundary` pour les frontières seules)
+
+Pas de compteur PMU dédié aux préchargeurs : deux mesures indirectes. (1) **Latence de chargements dépendants** le long d'un stride
+constant, rapportée à un ordre aléatoire sur le même jeu (le préchargeur s'entraîne sur les adresses, pas sur les données, donc la
+dépendance de données n'empêche pas le gain). (2) **Lignes réellement lues sur le bus** (`BUS_ACCESS` / 8 par ligne, mesuré en phase 1)
+pour des flux à froid de longueur n, ce qui compte aussi les lignes préchargées et jamais demandées.
+
+### E3.1 Balayage de stride
+- Chaîne visitant la ligne `(j·k) mod N` (N premier : cycle unique), k de ±1 à ±4096 lignes, sur trois jeux : 4093 lignes (256 Kio, servi par
+  le L2), 16381 lignes (1 Mio, L3/L2), 1 048 573 lignes (64 Mio, DRAM). Référence : cycle aléatoire de Sattolo sur le même jeu.
+  Noyau `chase` (16 `ldr` dépendants). PMU : cycles, refills L1/L2/L3, `LL_CACHE_MISS_RD`, `BUS_ACCESS`, `DTLB_WALK` (7 compteurs).
+- **Biais** : (a) strides ≥ N/16 sur les petits jeux se replient en quelques pas (exclus) ; (b) aux grands strides les page walks
+  ajoutent de la latence (DTLB_WALK par accès enregistré) ; (c) le préchargement peut aussi gagner sur un cycle aléatoire par hasard
+  d'adjacence : le rapport à l'aléatoire mesuré (≈ 1,0 pour les grands strides) le contrôle.
+
+### E3.2 Flux entrelacés
+- S flux séquentiels (+1 ligne) de 8 Mio chacun, décalés de 257 lignes, visités en tourniquet dans une seule chaîne dépendante ;
+  S de 1 à 32. **Biais** : au-delà de 16 flux le jeu total dépasse 128 Mio ; les accès TLB augmentent aussi avec S.
+
+### E3.3 Distance / degré
+- n accès dépendants à froid (adresses neuves dans un pool de 512 Mio, emplacements de 512 Kio tirés au hasard), 64 flux par fenêtre PMU,
+  attente de 20 µs avant de relire les compteurs (laisser sortir les préchargements en vol). Noyau `stream_load` : le zéro lu est ajouté à
+  l'adresse (dépendance). « Extra » = (bus − base(n = 1)) / 8 − (n − 1). Stores : `stream_store` (indépendants).
+- **Biais** : compter des lignes sur le bus suppose 8 accès bus par ligne (vérifié en phase 1) ; les écritures différées de
+  précédents flux peuvent s'ajouter (stores) ; l'interprétation en « distance d'avance » suppose que les lignes préchargées ne sont
+  jamais réutilisées par la demande suivante (vrai : flux court à adresses neuves).
+
+### E3.4 Frontières
+- Flux de 16 lignes : « fin exacte sur la frontière », « traverse la frontière » (8 lignes avant, 8 après), « fin au milieu du bloc » (témoin) ;
+  ascendant et descendant (par symétrie autour de la frontière). Avant chaque répétition, le L2/L3 est vidé par la lecture de 8 Mio.
+  Trois sources de candidats : pool ordinaire (frontières de 4 Kio à l'intérieur d'une page, frontières de 16 Kio, 64 Kio, 2 Mio), et 32 Mio de mémoire
+  **CMA** (`/dev/dma_heap/linux,cma`, groupe `video`), physiquement contiguë par construction, pour des frontières de 4 Kio, 16 Kio et
+  64 Kio (4 phases d'alignement, l'adresse physique n'étant pas lisible).
+- **Biais** : voir les résidus non expliqués dans `RESULTS.md`.
+
+### E3.5 Stores
+- `store_table` : stores indépendants aux adresses d'une table (lue séquentiellement) parcourant le jeu DRAM selon un stride ou un ordre
+  aléatoire ; ns/store et lignes bus par store.
+- **Biais** : la table est elle-même lue en flux (constante additive) ; loads (dépendants) et stores (indépendants) ne mesurent pas la même
+  grandeur (latence contre débit).

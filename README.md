@@ -11,10 +11,10 @@ confidence level and is labelled **measured**, **deduced** or **hypothesis**. Re
 contradict the spec or our expectations are documented, not smoothed away — negative and ambiguous
 results are results.
 
-> **Status: Phases 0 (foundations), 1 (memory hierarchy) and 2 (cache geometry and replacement) are
-> complete.** The measurement chain is validated on real hardware; curves for cache/DRAM latency, TLB reach,
-> NEON bandwidth, and measured cache geometry (ways, sets, index bits) are available. Phases 3–6 are not
-> written yet; see the [roadmap](#roadmap).
+> **Status: Phases 0 (foundations), 1 (memory hierarchy), 2 (cache geometry and replacement) and 3
+> (prefetchers) are complete.** The measurement chain is validated on real hardware; curves for cache/DRAM
+> latency, TLB reach, NEON bandwidth, measured cache geometry and hardware-prefetcher behaviour are available.
+> Phases 4-6 are not written yet; see the [roadmap](#roadmap).
 
 ## Why this is harder than it looks
 
@@ -159,6 +159,42 @@ started from many random initial states.
 
 `a76probe analyze-cache --raw <file>` re-scores the replacement signatures from the raw data without touching hardware.
 
+## Phase 3 results: hardware prefetchers
+
+One full run (9660 repetitions, 30 per point, 0 flagged invalid). No prefetcher-specific PMU event is exposed, so everything
+is inferred from (a) the latency of dependent loads along a constant stride compared with a random order over the same set, and
+(b) how many lines are actually read on the bus (`BUS_ACCESS` / 8) by cold streams of `n` lines. Raw data:
+[`raw/prefetch.jsonl`](results/2026-09-19/raw/prefetch.jsonl); table:
+[`prefetch_experiments.csv`](results/2026-09-19/prefetch_experiments.csv).
+
+![Stride detection](docs/img/prefetch_stride.png)
+
+| Finding | Value | Confidence |
+|---|---|---|
+| Largest tracked stride | **21 lines (1344 B)** forward; 22 lines is no longer followed (DRAM ratio 0.26 → 0.92, L3 0.29 → 1.00) | high |
+| Two mechanisms, told apart by working-set size | data in L2: only **±1 line** speeds up (1.9 ns ≈ 4.5 cycles, the L1 latency); data in L3 or DRAM: strides **±1…21** all speed up (0.14–0.52 of random in L3, 0.04–0.27 in DRAM) | medium |
+| Latency reached | ±1 in DRAM: 4.6 ns (≈ 11 cycles, the L2 latency) instead of 110 ns | high |
+| Streams tracked at once | **16** interleaved sequential streams; 17 already collapses (9 ns → 30 ns per access) | high |
+| Training length | prefetching starts at the **4th** sequential access (stride 16: only after 17–24) | medium |
+| Run-ahead | **≈ 40 lines** (2.5 KiB) for a sequential stream once it is long enough (n ≥ 48), **≈ 15–16 lines** for strided streams | medium |
+| Descending streams | behave like ascending ones (same trigger, same 40-line run-ahead) | medium |
+
+![Interleaved streams](docs/img/prefetch_streams.png)
+
+![Run-ahead versus stream length](docs/img/prefetch_overshoot.png)
+
+Boundaries (16-line cold streams; the physically contiguous case uses 32 MiB from the CMA DMA heap):
+
+![Page boundaries](docs/img/prefetch_boundary.png)
+
+- **The prefetcher does not run across a 16 KiB page boundary** (the translation granule): a stream that ends exactly on the boundary
+  reads about 10 fewer lines than the control, both in ordinary and in physically contiguous memory; it **does** continue when the
+  demand itself crosses the boundary. It does **not** stop at 4 KiB boundaries inside a page. No extra limit shows up at 64 KiB or 2 MiB.
+- **Stores** follow a next-line pattern too: +1/−1 stride stores take 0.65 of the random-order time, and the benefit fades smoothly with
+  stride (no cut at 21 as for loads); their run-ahead is shorter (≈ 8 lines versus ≈ 40).
+- Kept in the record without smoothing: non-monotonic partial gains at strides 3, 5, 10 with data in L2; an unusually good stride of 16
+  lines in DRAM; a reproducible dip at n = 16 for +1 streams; store streams whose run-ahead vanishes at n = 64, 128, 192, 256 but not at 96.
+
 ## Roadmap
 
 | Phase | Topic | Status |
@@ -166,7 +202,7 @@ started from many random initial states.
 | 0 | Foundations: env snapshot, timing sources, PMU wrapper, stats, guard, JSONL output, self-test | **done** |
 | 1 | Memory hierarchy: pointer-chasing latency, TLB reach, NEON bandwidth (1–4 cores) | **done** |
 | 2 | Cache geometry and replacement policy (compared with software LRU/PLRU/FIFO/random/SRRIP/NRU models) | **done** |
-| 3 | Hardware prefetchers: stride range, streams, distance, page-boundary behaviour | planned |
+| 3 | Hardware prefetchers: stride range, streams, distance, page-boundary behaviour | **done** |
 | 4 | Branch predictors via runtime-generated code: BTB, history length, indirect, return stack, penalty | planned |
 | 5 | Out-of-order core: ROB / load queue / store buffer / register files, MLP, instruction latency and throughput | planned |
 | 6 | Inter-core: 4×4 line-transfer latency, store-to-load forwarding, unaligned access costs | planned |
@@ -217,6 +253,7 @@ On the Pi directly:
 ./a76probe selftest --core 1 --repeat 30 --out-dir results
 ./a76probe run --all --core 1 --repeat 30            # or --exp latency | tlb | bandwidth
 sudo ./a76probe run --exp cache --core 1 --repeat 30   # phase 2 (about 12 minutes; root only for pagemap)
+./a76probe run --exp prefetch --core 1 --repeat 30      # phase 3 (about 20 minutes; run as root to also classify boundaries)
 ./a76probe analyze-cache --raw results/<date>/raw/cache.jsonl   # re-score replacement policies offline
 ./a76probe pmu-list                  # PMU events exposed by the kernel
 ```
@@ -252,12 +289,13 @@ src/
   phys.rs        pagemap reader (physical addresses of our own pages, root only)
   lineset.rs     selection of lines with prescribed physical-address bits
   cache_geom.rs  phase 2: line size, associativity, index bits, replacement, inclusion
+  prefetch.rs    phase 3: stride sweep, interleaved streams, run-ahead, boundaries, stores
   sim.rs         software models of one cache set (LRU, tree-PLRU, FIFO, random, SRRIP, BRRIP, NRU, SRRIP-FP)
   analysis.rs    offline scoring of measured replacement signatures against the models
 docs/
   methodology.md per-experiment hypothesis, principle, possible biases (French)
   asm/           archived objdump output of the asm kernels
-scripts/        plot.py (phase 1) and plot_cache.py (phase 2) draw the figures from the CSV/JSONL files (matplotlib)
+scripts/        plot.py (phase 1), plot_cache.py (phase 2) and plot_prefetch.py (phase 3) draw the figures from the CSV/JSONL files (matplotlib)
 results/<date>/  env.json, CSV curves and raw/*.jsonl produced on the Pi
 PLAN.md          architecture, technical decisions, risks, open questions (French)
 RESULTS.md       every finding: value, method, confidence, source file (French)
