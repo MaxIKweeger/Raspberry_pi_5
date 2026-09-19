@@ -1,0 +1,425 @@
+
+### add_lat  (_ZN8a76probe3ooo7add_lat17hc99f8787083c708bE)
+0000000000288f10 <_ZN8a76probe3ooo7add_lat17hc99f8787083c708bE>:
+  288f10:	mov	w8, #0x5678                	// #22136
+  288f14:	movk	w8, #0x1234, lsl #16
+  288f18:	mov	w9, #0x3                   	// #3
+  288f1c:	add	x8, x8, x9
+  288f20:	add	x8, x8, x9
+  288f24:	add	x8, x8, x9
+  288f28:	add	x8, x8, x9
+  288f2c:	add	x8, x8, x9
+  288f30:	add	x8, x8, x9
+  288f34:	add	x8, x8, x9
+  288f38:	add	x8, x8, x9
+  288f3c:	add	x8, x8, x9
+  288f40:	add	x8, x8, x9
+  288f44:	add	x8, x8, x9
+  288f48:	add	x8, x8, x9
+  288f4c:	add	x8, x8, x9
+  288f50:	add	x8, x8, x9
+  288f54:	add	x8, x8, x9
+  288f58:	add	x8, x8, x9
+  288f5c:	subs	x0, x0, #0x1
+  288f60:	b.ne	288f1c <_ZN8a76probe3ooo7add_lat17hc99f8787083c708bE+0xc>  // b.any
+  288f64:	ret
+
+### add_tp  (_ZN8a76probe3ooo6add_tp17h20dfc185861c7212E)
+0000000000288f70 <_ZN8a76probe3ooo6add_tp17h20dfc185861c7212E>:
+  288f70:	mov	w8, #0x3                   	// #3
+  288f74:	add	x9, x8, x8
+  288f78:	add	x10, x8, x8
+  288f7c:	add	x11, x8, x8
+  288f80:	add	x12, x8, x8
+  288f84:	add	x13, x8, x8
+  288f88:	add	x14, x8, x8
+  288f8c:	add	x15, x8, x8
+  288f90:	add	x16, x8, x8
+  288f94:	add	x9, x8, x8
+  288f98:	add	x10, x8, x8
+  288f9c:	add	x11, x8, x8
+  288fa0:	add	x12, x8, x8
+  288fa4:	add	x13, x8, x8
+  288fa8:	add	x14, x8, x8
+  288fac:	add	x15, x8, x8
+  288fb0:	add	x16, x8, x8
+  288fb4:	subs	x0, x0, #0x1
+  288fb8:	b.ne	288f74 <_ZN8a76probe3ooo6add_tp17h20dfc185861c7212E+0x4>  // b.any
+  288fbc:	ret
+
+### mul_lat  (_ZN8a76probe3ooo7mul_lat17h3ea294f0c64775d7E)
+0000000000288fc0 <_ZN8a76probe3ooo7mul_lat17h3ea294f0c64775d7E>:
+  288fc0:	mov	w8, #0x5678                	// #22136
+  288fc4:	movk	w8, #0x1234, lsl #16
+  288fc8:	mov	w9, #0x3                   	// #3
+  288fcc:	mul	x8, x8, x9
+  288fd0:	mul	x8, x8, x9
+  288fd4:	mul	x8, x8, x9
+  288fd8:	mul	x8, x8, x9
+  288fdc:	mul	x8, x8, x9
+  288fe0:	mul	x8, x8, x9
+  288fe4:	mul	x8, x8, x9
+  288fe8:	mul	x8, x8, x9
+  288fec:	mul	x8, x8, x9
+  288ff0:	mul	x8, x8, x9
+  288ff4:	mul	x8, x8, x9
+  288ff8:	mul	x8, x8, x9
+  288ffc:	mul	x8, x8, x9
+  289000:	mul	x8, x8, x9
+  289004:	mul	x8, x8, x9
+  289008:	mul	x8, x8, x9
+  28900c:	subs	x0, x0, #0x1
+  289010:	b.ne	288fcc <_ZN8a76probe3ooo7mul_lat17h3ea294f0c64775d7E+0xc>  // b.any
+  289014:	ret
+
+### mul_tp  (_ZN8a76probe3ooo6mul_tp17h7dc7048200256f06E)
+0000000000289020 <_ZN8a76probe3ooo6mul_tp17h7dc7048200256f06E>:
+  289020:	mov	w8, #0x3                   	// #3
+  289024:	mul	x9, x8, x8
+  289028:	mul	x10, x8, x8
+  28902c:	mul	x11, x8, x8
+  289030:	mul	x12, x8, x8
+  289034:	mul	x13, x8, x8
+  289038:	mul	x14, x8, x8
+  28903c:	mul	x15, x8, x8
+  289040:	mul	x16, x8, x8
+  289044:	mul	x9, x8, x8
+  289048:	mul	x10, x8, x8
+  28904c:	mul	x11, x8, x8
+  289050:	mul	x12, x8, x8
+  289054:	mul	x13, x8, x8
+  289058:	mul	x14, x8, x8
+  28905c:	mul	x15, x8, x8
+  289060:	mul	x16, x8, x8
+  289064:	subs	x0, x0, #0x1
+  289068:	b.ne	289024 <_ZN8a76probe3ooo6mul_tp17h7dc7048200256f06E+0x4>  // b.any
+  28906c:	ret
+
+### madd_lat  (_ZN8a76probe3ooo8madd_lat17hdeec1eeb3d74f2e7E)
+0000000000289070 <_ZN8a76probe3ooo8madd_lat17hdeec1eeb3d74f2e7E>:
+  289070:	mov	x8, xzr
+  289074:	mov	w9, #0x1                   	// #1
+  289078:	mov	w10, #0x1                   	// #1
+  28907c:	madd	x10, x10, x9, x8
+  289080:	madd	x10, x10, x9, x8
+  289084:	madd	x10, x10, x9, x8
+  289088:	madd	x10, x10, x9, x8
+  28908c:	madd	x10, x10, x9, x8
+  289090:	madd	x10, x10, x9, x8
+  289094:	madd	x10, x10, x9, x8
+  289098:	madd	x10, x10, x9, x8
+  28909c:	madd	x10, x10, x9, x8
+  2890a0:	madd	x10, x10, x9, x8
+  2890a4:	madd	x10, x10, x9, x8
+  2890a8:	madd	x10, x10, x9, x8
+  2890ac:	madd	x10, x10, x9, x8
+  2890b0:	madd	x10, x10, x9, x8
+  2890b4:	madd	x10, x10, x9, x8
+  2890b8:	madd	x10, x10, x9, x8
+  2890bc:	subs	x0, x0, #0x1
+  2890c0:	b.ne	28907c <_ZN8a76probe3ooo8madd_lat17hdeec1eeb3d74f2e7E+0xc>  // b.any
+  2890c4:	ret
+
+### sdiv_lat  (_ZN8a76probe3ooo8sdiv_lat17hf7a6fcf52df723b7E)
+0000000000289130 <_ZN8a76probe3ooo8sdiv_lat17hf7a6fcf52df723b7E>:
+  289130:	mov	w8, #0x1                   	// #1
+  289134:	mov	x9, #0x7fffffffffffffff    	// #9223372036854775807
+  289138:	sdiv	x9, x9, x8
+  28913c:	sdiv	x9, x9, x8
+  289140:	sdiv	x9, x9, x8
+  289144:	sdiv	x9, x9, x8
+  289148:	sdiv	x9, x9, x8
+  28914c:	sdiv	x9, x9, x8
+  289150:	sdiv	x9, x9, x8
+  289154:	sdiv	x9, x9, x8
+  289158:	sdiv	x9, x9, x8
+  28915c:	sdiv	x9, x9, x8
+  289160:	sdiv	x9, x9, x8
+  289164:	sdiv	x9, x9, x8
+  289168:	sdiv	x9, x9, x8
+  28916c:	sdiv	x9, x9, x8
+  289170:	sdiv	x9, x9, x8
+  289174:	sdiv	x9, x9, x8
+  289178:	subs	x0, x0, #0x1
+  28917c:	b.ne	289138 <_ZN8a76probe3ooo8sdiv_lat17hf7a6fcf52df723b7E+0x8>  // b.any
+  289180:	ret
+
+### fadd_lat  (_ZN8a76probe3ooo8fadd_lat17hc5ca1bd4b03a8affE)
+00000000002891f0 <_ZN8a76probe3ooo8fadd_lat17hc5ca1bd4b03a8affE>:
+  2891f0:	fmov	d0, #1.000000000000000000e+00
+  2891f4:	movi	d1, #0x0
+  2891f8:	fadd	d0, d0, d1
+  2891fc:	fadd	d0, d0, d1
+  289200:	fadd	d0, d0, d1
+  289204:	fadd	d0, d0, d1
+  289208:	fadd	d0, d0, d1
+  28920c:	fadd	d0, d0, d1
+  289210:	fadd	d0, d0, d1
+  289214:	fadd	d0, d0, d1
+  289218:	fadd	d0, d0, d1
+  28921c:	fadd	d0, d0, d1
+  289220:	fadd	d0, d0, d1
+  289224:	fadd	d0, d0, d1
+  289228:	fadd	d0, d0, d1
+  28922c:	fadd	d0, d0, d1
+  289230:	fadd	d0, d0, d1
+  289234:	fadd	d0, d0, d1
+  289238:	subs	x0, x0, #0x1
+  28923c:	b.ne	2891f8 <_ZN8a76probe3ooo8fadd_lat17hc5ca1bd4b03a8affE+0x8>  // b.any
+  289240:	ret
+
+### fmla_lat  (_ZN8a76probe3ooo8fmla_lat17hbf982aa83fd0ebddE)
+0000000000289350 <_ZN8a76probe3ooo8fmla_lat17hbf982aa83fd0ebddE>:
+  289350:	movi	v0.2d, #0x0
+  289354:	movi	v1.2d, #0x0
+  289358:	fmla	v1.4s, v0.4s, v0.4s
+  28935c:	fmla	v1.4s, v0.4s, v0.4s
+  289360:	fmla	v1.4s, v0.4s, v0.4s
+  289364:	fmla	v1.4s, v0.4s, v0.4s
+  289368:	fmla	v1.4s, v0.4s, v0.4s
+  28936c:	fmla	v1.4s, v0.4s, v0.4s
+  289370:	fmla	v1.4s, v0.4s, v0.4s
+  289374:	fmla	v1.4s, v0.4s, v0.4s
+  289378:	fmla	v1.4s, v0.4s, v0.4s
+  28937c:	fmla	v1.4s, v0.4s, v0.4s
+  289380:	fmla	v1.4s, v0.4s, v0.4s
+  289384:	fmla	v1.4s, v0.4s, v0.4s
+  289388:	fmla	v1.4s, v0.4s, v0.4s
+  28938c:	fmla	v1.4s, v0.4s, v0.4s
+  289390:	fmla	v1.4s, v0.4s, v0.4s
+  289394:	fmla	v1.4s, v0.4s, v0.4s
+  289398:	subs	x0, x0, #0x1
+  28939c:	b.ne	289358 <_ZN8a76probe3ooo8fmla_lat17hbf982aa83fd0ebddE+0x8>  // b.any
+  2893a0:	ret
+
+### fmla_tp: symbol not found
+
+### sdot_lat  (_ZN8a76probe3ooo8sdot_lat17h8b1cf6d00c37a819E)
+0000000000289420 <_ZN8a76probe3ooo8sdot_lat17h8b1cf6d00c37a819E>:
+  289420:	movi	v0.2d, #0x0
+  289424:	movi	v1.2d, #0x0
+  289428:	sdot	v1.4s, v0.16b, v0.16b
+  28942c:	sdot	v1.4s, v0.16b, v0.16b
+  289430:	sdot	v1.4s, v0.16b, v0.16b
+  289434:	sdot	v1.4s, v0.16b, v0.16b
+  289438:	sdot	v1.4s, v0.16b, v0.16b
+  28943c:	sdot	v1.4s, v0.16b, v0.16b
+  289440:	sdot	v1.4s, v0.16b, v0.16b
+  289444:	sdot	v1.4s, v0.16b, v0.16b
+  289448:	sdot	v1.4s, v0.16b, v0.16b
+  28944c:	sdot	v1.4s, v0.16b, v0.16b
+  289450:	sdot	v1.4s, v0.16b, v0.16b
+  289454:	sdot	v1.4s, v0.16b, v0.16b
+  289458:	sdot	v1.4s, v0.16b, v0.16b
+  28945c:	sdot	v1.4s, v0.16b, v0.16b
+  289460:	sdot	v1.4s, v0.16b, v0.16b
+  289464:	sdot	v1.4s, v0.16b, v0.16b
+  289468:	subs	x0, x0, #0x1
+  28946c:	b.ne	289428 <_ZN8a76probe3ooo8sdot_lat17h8b1cf6d00c37a819E+0x8>  // b.any
+  289470:	ret
+
+### ldr_lat  (_ZN8a76probe3ooo7ldr_lat17hda16fa99134dbec3E)
+00000000002894f0 <_ZN8a76probe3ooo7ldr_lat17hda16fa99134dbec3E>:
+  2894f0:	ldr	x1, [x1]
+  2894f4:	ldr	x1, [x1]
+  2894f8:	ldr	x1, [x1]
+  2894fc:	ldr	x1, [x1]
+  289500:	ldr	x1, [x1]
+  289504:	ldr	x1, [x1]
+  289508:	ldr	x1, [x1]
+  28950c:	ldr	x1, [x1]
+  289510:	ldr	x1, [x1]
+  289514:	ldr	x1, [x1]
+  289518:	ldr	x1, [x1]
+  28951c:	ldr	x1, [x1]
+  289520:	ldr	x1, [x1]
+  289524:	ldr	x1, [x1]
+  289528:	ldr	x1, [x1]
+  28952c:	ldr	x1, [x1]
+  289530:	subs	x0, x0, #0x1
+  289534:	b.ne	2894f0 <_ZN8a76probe3ooo7ldr_lat17hda16fa99134dbec3E>  // b.any
+  289538:	ret
+
+### ldr_tp  (_ZN8a76probe3ooo6ldr_tp17h39c8ddf95e95ea0cE)
+0000000000289540 <_ZN8a76probe3ooo6ldr_tp17h39c8ddf95e95ea0cE>:
+  289540:	ldr	x8, [x1]
+  289544:	ldr	x9, [x1]
+  289548:	ldr	x10, [x1]
+  28954c:	ldr	x11, [x1]
+  289550:	ldr	x12, [x1]
+  289554:	ldr	x13, [x1]
+  289558:	ldr	x14, [x1]
+  28955c:	ldr	x15, [x1]
+  289560:	ldr	x8, [x1]
+  289564:	ldr	x9, [x1]
+  289568:	ldr	x10, [x1]
+  28956c:	ldr	x11, [x1]
+  289570:	ldr	x12, [x1]
+  289574:	ldr	x13, [x1]
+  289578:	ldr	x14, [x1]
+  28957c:	ldr	x15, [x1]
+  289580:	subs	x0, x0, #0x1
+  289584:	b.ne	289540 <_ZN8a76probe3ooo6ldr_tp17h39c8ddf95e95ea0cE>  // b.any
+  289588:	ret
+
+### ldp_lat  (_ZN8a76probe3ooo7ldp_lat17haf78128c12c95411E)
+0000000000289590 <_ZN8a76probe3ooo7ldp_lat17haf78128c12c95411E>:
+  289590:	ldp	x1, x8, [x1]
+  289594:	ldp	x1, x8, [x1]
+  289598:	ldp	x1, x8, [x1]
+  28959c:	ldp	x1, x8, [x1]
+  2895a0:	ldp	x1, x8, [x1]
+  2895a4:	ldp	x1, x8, [x1]
+  2895a8:	ldp	x1, x8, [x1]
+  2895ac:	ldp	x1, x8, [x1]
+  2895b0:	ldp	x1, x8, [x1]
+  2895b4:	ldp	x1, x8, [x1]
+  2895b8:	ldp	x1, x8, [x1]
+  2895bc:	ldp	x1, x8, [x1]
+  2895c0:	ldp	x1, x8, [x1]
+  2895c4:	ldp	x1, x8, [x1]
+  2895c8:	ldp	x1, x8, [x1]
+  2895cc:	ldp	x1, x8, [x1]
+  2895d0:	subs	x0, x0, #0x1
+  2895d4:	b.ne	289590 <_ZN8a76probe3ooo7ldp_lat17haf78128c12c95411E>  // b.any
+  2895d8:	ret
+
+### str_tp  (_ZN8a76probe3ooo6str_tp17h8a650b00021eaf32E)
+0000000000289680 <_ZN8a76probe3ooo6str_tp17h8a650b00021eaf32E>:
+  289680:	mov	x8, xzr
+  289684:	add	x9, x1, #0x400
+  289688:	str	x8, [x9]
+  28968c:	str	x8, [x9]
+  289690:	str	x8, [x9]
+  289694:	str	x8, [x9]
+  289698:	str	x8, [x9]
+  28969c:	str	x8, [x9]
+  2896a0:	str	x8, [x9]
+  2896a4:	str	x8, [x9]
+  2896a8:	str	x8, [x9]
+  2896ac:	str	x8, [x9]
+  2896b0:	str	x8, [x9]
+  2896b4:	str	x8, [x9]
+  2896b8:	str	x8, [x9]
+  2896bc:	str	x8, [x9]
+  2896c0:	str	x8, [x9]
+  2896c4:	str	x8, [x9]
+  2896c8:	subs	x0, x0, #0x1
+  2896cc:	b.ne	289688 <_ZN8a76probe3ooo6str_tp17h8a650b00021eaf32E+0x8>  // b.any
+  2896d0:	ret
+
+### stp_tp  (_ZN8a76probe3ooo6stp_tp17haf7145fe04677019E)
+00000000002896e0 <_ZN8a76probe3ooo6stp_tp17haf7145fe04677019E>:
+  2896e0:	mov	x8, xzr
+  2896e4:	add	x9, x1, #0x400
+  2896e8:	stp	x8, x8, [x9]
+  2896ec:	stp	x8, x8, [x9]
+  2896f0:	stp	x8, x8, [x9]
+  2896f4:	stp	x8, x8, [x9]
+  2896f8:	stp	x8, x8, [x9]
+  2896fc:	stp	x8, x8, [x9]
+  289700:	stp	x8, x8, [x9]
+  289704:	stp	x8, x8, [x9]
+  289708:	stp	x8, x8, [x9]
+  28970c:	stp	x8, x8, [x9]
+  289710:	stp	x8, x8, [x9]
+  289714:	stp	x8, x8, [x9]
+  289718:	stp	x8, x8, [x9]
+  28971c:	stp	x8, x8, [x9]
+  289720:	stp	x8, x8, [x9]
+  289724:	stp	x8, x8, [x9]
+  289728:	subs	x0, x0, #0x1
+  28972c:	b.ne	2896e8 <_ZN8a76probe3ooo6stp_tp17haf7145fe04677019E+0x8>  // b.any
+  289730:	ret
+
+### dmb_tp  (_ZN8a76probe3ooo6dmb_tp17hb203f62fa3c9a0edE)
+0000000000289740 <_ZN8a76probe3ooo6dmb_tp17hb203f62fa3c9a0edE>:
+  289740:	dmb	ish
+  289744:	dmb	ish
+  289748:	dmb	ish
+  28974c:	dmb	ish
+  289750:	dmb	ish
+  289754:	dmb	ish
+  289758:	dmb	ish
+  28975c:	dmb	ish
+  289760:	dmb	ish
+  289764:	dmb	ish
+  289768:	dmb	ish
+  28976c:	dmb	ish
+  289770:	dmb	ish
+  289774:	dmb	ish
+  289778:	dmb	ish
+  28977c:	dmb	ish
+  289780:	subs	x0, x0, #0x1
+  289784:	b.ne	289740 <_ZN8a76probe3ooo6dmb_tp17hb203f62fa3c9a0edE>  // b.any
+  289788:	ret
+
+### ldar_lat  (_ZN8a76probe3ooo8ldar_lat17hb91a3a9618b6bc18E)
+0000000000289830 <_ZN8a76probe3ooo8ldar_lat17hb91a3a9618b6bc18E>:
+  289830:	ldar	x1, [x1]
+  289834:	ldar	x1, [x1]
+  289838:	ldar	x1, [x1]
+  28983c:	ldar	x1, [x1]
+  289840:	ldar	x1, [x1]
+  289844:	ldar	x1, [x1]
+  289848:	ldar	x1, [x1]
+  28984c:	ldar	x1, [x1]
+  289850:	ldar	x1, [x1]
+  289854:	ldar	x1, [x1]
+  289858:	ldar	x1, [x1]
+  28985c:	ldar	x1, [x1]
+  289860:	ldar	x1, [x1]
+  289864:	ldar	x1, [x1]
+  289868:	ldar	x1, [x1]
+  28986c:	ldar	x1, [x1]
+  289870:	subs	x0, x0, #0x1
+  289874:	b.ne	289830 <_ZN8a76probe3ooo8ldar_lat17hb91a3a9618b6bc18E>  // b.any
+  289878:	ret
+
+### stlr_tp  (_ZN8a76probe3ooo7stlr_tp17hb125c397c36a8270E)
+00000000002898d0 <_ZN8a76probe3ooo7stlr_tp17hb125c397c36a8270E>:
+  2898d0:	mov	x8, xzr
+  2898d4:	add	x9, x1, #0x400
+  2898d8:	stlr	x8, [x9]
+  2898dc:	stlr	x8, [x9]
+  2898e0:	stlr	x8, [x9]
+  2898e4:	stlr	x8, [x9]
+  2898e8:	stlr	x8, [x9]
+  2898ec:	stlr	x8, [x9]
+  2898f0:	stlr	x8, [x9]
+  2898f4:	stlr	x8, [x9]
+  2898f8:	stlr	x8, [x9]
+  2898fc:	stlr	x8, [x9]
+  289900:	stlr	x8, [x9]
+  289904:	stlr	x8, [x9]
+  289908:	stlr	x8, [x9]
+  28990c:	stlr	x8, [x9]
+  289910:	stlr	x8, [x9]
+  289914:	stlr	x8, [x9]
+  289918:	subs	x0, x0, #0x1
+  28991c:	b.ne	2898d8 <_ZN8a76probe3ooo7stlr_tp17hb125c397c36a8270E+0x8>  // b.any
+  289920:	ret
+
+### ldadd_same  (_ZN8a76probe3ooo10ldadd_same17hf076fe9dbb8d3d80E)
+0000000000289930 <_ZN8a76probe3ooo10ldadd_same17hf076fe9dbb8d3d80E>:
+  289930:	add	x8, x1, #0x400
+  289934:	mov	w9, #0x1                   	// #1
+  289938:	ldadd	x9, x10, [x8]
+  28993c:	ldadd	x9, x10, [x8]
+  289940:	ldadd	x9, x10, [x8]
+  289944:	ldadd	x9, x10, [x8]
+  289948:	ldadd	x9, x10, [x8]
+  28994c:	ldadd	x9, x10, [x8]
+  289950:	ldadd	x9, x10, [x8]
+  289954:	ldadd	x9, x10, [x8]
+  289958:	ldadd	x9, x10, [x8]
+  28995c:	ldadd	x9, x10, [x8]
+  289960:	ldadd	x9, x10, [x8]
+  289964:	ldadd	x9, x10, [x8]
+  289968:	ldadd	x9, x10, [x8]
+  28996c:	ldadd	x9, x10, [x8]
+  289970:	ldadd	x9, x10, [x8]
+  289974:	ldadd	x9, x10, [x8]
+  289978:	subs	x0, x0, #0x1
+  28997c:	b.ne	289938 <_ZN8a76probe3ooo10ldadd_same17hf076fe9dbb8d3d80E+0x8>  // b.any
+  289980:	ret

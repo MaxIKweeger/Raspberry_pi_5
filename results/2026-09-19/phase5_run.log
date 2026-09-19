@@ -1,0 +1,48 @@
+core 1, expected freq 2400000 kHz, CNTFRQ 54000000 Hz, 30 reps
+
+== 5.3 instruction latency / reciprocal throughput (cycles per instruction; instructions per loop iteration checked with INST_RETIRED)
+  add x,x,x                    latency                           1.000 cycles   (retired/instr 1.125)
+  add x,x,x                    throughput                        0.354 cycles   (retired/instr 1.125)
+  mul x,x,x                    latency                           4.063 cycles   (retired/instr 1.125)
+  mul x,x,x                    throughput                        3.000 cycles   (retired/instr 1.125)
+  madd x,x,x,x                 latency (accumulator)             4.063 cycles   (retired/instr 1.125)
+  madd x,x,x,x                 throughput                        3.000 cycles   (retired/instr 1.125)
+  sdiv x,x,x (divide by 1)     latency                           5.000 cycles   (retired/instr 1.125)
+  sdiv x,x,x (0x7fff.. / 3)    throughput                       20.000 cycles   (retired/instr 1.125)
+  fadd d,d,d                   latency                           2.000 cycles   (retired/instr 1.125)
+  fadd d,d,d                   throughput                        0.500 cycles   (retired/instr 1.125)
+  fmul d,d,d                   latency                           3.000 cycles   (retired/instr 1.125)
+  fmul d,d,d                   throughput                        0.500 cycles   (retired/instr 1.125)
+  fmla v.4s (NEON)             latency (accumulator)             2.000 cycles   (retired/instr 1.125)
+  fmla v.4s (NEON)             throughput                        0.500 cycles   (retired/instr 1.125)
+  sdot v.4s,v.16b,v.16b        latency (accumulator)             1.000 cycles   (retired/instr 1.125)
+  sdot v.4s,v.16b,v.16b        throughput                        0.500 cycles   (retired/instr 1.125)
+  ldr x,[x] (L1 hit)           latency                           4.000 cycles   (retired/instr 1.125)
+  ldr x,[x] (L1 hit)           throughput                        0.500 cycles   (retired/instr 1.125)
+  ldp x,x,[x]                  latency                           4.000 cycles   (retired/instr 1.125)
+  ldp x,x,[x]                  throughput                        1.000 cycles   (retired/instr 1.125)
+  ldp q,q,[x]                  throughput                        1.000 cycles   (retired/instr 1.125)
+  str x,[x]                    throughput                        0.503 cycles   (retired/instr 1.125)
+  stp x,x,[x]                  throughput                        3.000 cycles   (retired/instr 1.125)
+  dmb ish                      throughput (alone)                7.000 cycles   (retired/instr 1.125)
+  str + dmb ish                throughput (pairs, per pair)     12.000 cycles   (retired/instr 2.125)
+  ldar x,[x]                   latency                           4.000 cycles   (retired/instr 1.125)
+  ldar x,[x]                   throughput                        0.500 cycles   (retired/instr 1.125)
+  stlr x,[x]                   throughput                        0.501 cycles   (retired/instr 1.125)
+  ldadd (LSE), same line       throughput                       13.000 cycles   (retired/instr 1.125)
+  ldadd (LSE), 4 lines         throughput                       13.000 cycles   (retired/instr 1.125)
+
+== 5.2 memory-level parallelism: cycles per load with K independent dependent chains
+  L2-resident : K=1:12.6 K=2:6.7 K=3:4.7 K=4:3.8 K=5:3.2 K=6:2.9 K=7:2.7 K=8:2.6 K=9:2.5 K=10:2.4 K=11:2.4 K=12:2.3 K=14:2.3 K=16:2.3 K=18:2.2 K=20:2.2 K=22:2.2
+     latency K=1: 12.6 cycles; K=22: 2.2 cycles per load => effective parallelism ~ 5.6
+  DRAM        : K=1:235.5 K=2:118.7 K=3:81.8 K=4:63.5 K=5:52.6 K=6:45.1 K=7:39.8 K=8:35.7 K=9:32.5 K=10:30.1 K=11:28.1 K=12:26.9 K=14:26.0 K=16:26.0 K=18:26.0 K=20:26.1 K=22:26.0
+     latency K=1: 235.5 cycles; K=22: 26.0 cycles per load => effective parallelism ~ 9.1
+
+== 5.1 window sizes: cycles per iteration (one independent DRAM miss + N fillers; 8 fixed instructions per iteration)
+   T(N) is piecewise linear; it jumps where one more iteration stops fitting in the window (W / (N + 8) drops below an integer).
+  nop       throughput-bound slope 0.259 cycles/filler; jumps: N 4->8 (+6 cycles => window 13..16) N 8->12 (+4 cycles => window 17..20) N 12->16 (+5 cycles => window 21..24) N 16->20 (+7 cycles => window 25..28) N 20->24 (+9 cycles => window 29..32) N 34->36 (+17 cycles => window 43..44) N 54->56 (+31 cycles => window 63..64) N 118->120 (+89 cycles => window 127..128)
+  int_add   throughput-bound slope 0.340 cycles/filler; jumps: N 2->4 (+4 cycles => window 11..12) N 4->8 (+9 cycles => window 13..16) N 8->12 (+7 cycles => window 17..20) N 12->16 (+10 cycles => window 21..24) N 20->24 (+17 cycles => window 29..32) N 34->36 (+3 cycles => window 43..44) N 36->38 (+30 cycles => window 45..46) N 76->78 (+3 cycles => window 85..86) N 78->80 (+18 cycles => window 87..88) N 80->82 (+71 cycles => window 89..90)
+  vec_eor   throughput-bound slope 0.505 cycles/filler; jumps: N 4->8 (+5 cycles => window 13..16) N 8->12 (+3 cycles => window 17..20) N 12->16 (+4 cycles => window 21..24) N 16->20 (+6 cycles => window 25..28) N 20->24 (+9 cycles => window 29..32) N 30->32 (+13 cycles => window 39..40) N 32->34 (+3 cycles => window 41..42) N 46->48 (+26 cycles => window 55..56) N 48->50 (+7 cycles => window 57..58) N 92->94 (+6 cycles => window 101..102) N 94->96 (+65 cycles => window 103..104) N 96->98 (+19 cycles => window 105..106)
+  load_l1   throughput-bound slope 0.517 cycles/filler; jumps: N 2->4 (+3 cycles => window 11..12) N 4->8 (+11 cycles => window 13..16) N 8->12 (+13 cycles => window 17..20) N 12->16 (+14 cycles => window 21..24) N 16->20 (+30 cycles => window 25..28) N 20->24 (+6 cycles => window 29..32) N 32->34 (+9 cycles => window 41..42) N 34->36 (+42 cycles => window 43..44) N 36->38 (+18 cycles => window 45..46) N 38->40 (+17 cycles => window 47..48) N 40->42 (+3 cycles => window 49..50) N 448->512 (+3 cycles => window 457..520)
+  store_l1  throughput-bound slope 1.348 cycles/filler; jumps: N 4->8 (+14 cycles => window 13..16) N 8->12 (+16 cycles => window 17..20) N 12->16 (+17 cycles => window 21..24) N 20->24 (+35 cycles => window 29..32) N 40->42 (+89 cycles => window 49..50) N 42->44 (+10 cycles => window 51..52) N 60->62 (+3 cycles => window 69..70) N 384->448 (+21 cycles => window 393..456)
+ooo: 15960 reps, 0 flagged invalid; data in results/2026-09-19
