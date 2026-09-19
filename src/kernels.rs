@@ -191,3 +191,69 @@ pub unsafe fn bw_copy(src: *const u8, dst: *mut u8, bytes: usize) {
         options(nostack)
     );
 }
+
+/// Replays `count` accesses: for each u16 index in `trace`, loads `table[index]` (a line address)
+/// then loads the line itself. Each target line must hold zero in its first 8 bytes: the loaded
+/// zero is added to the trace pointer so every access depends on the previous one and the cache
+/// sees the trace strictly in program order.
+///
+/// # Safety
+/// `trace` must hold `count` valid indices into `table`; every table entry must be a readable
+/// address whose first 8 bytes are zero.
+#[inline(never)]
+pub unsafe fn trace_replay(trace: *const u16, count: u64, table: *const usize) {
+    asm!(
+        "2:",
+        "ldrh {i:w}, [{t}]",
+        "add {t}, {t}, #2",
+        "ldr {a}, [{tab}, {i}, lsl #3]",
+        "ldr {v}, [{a}]",
+        "add {t}, {t}, {v}",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        t = inout(reg) trace => _,
+        tab = in(reg) table,
+        n = inout(reg) count => _,
+        i = out(reg) _,
+        a = out(reg) _,
+        v = out(reg) _,
+        options(nostack, readonly)
+    );
+}
+
+/// Like [`trace_replay`], but after every target access it loads the `n_evict` lines listed in
+/// `evict` (also chained by data dependency), to push the target line out of L1.
+///
+/// # Safety
+/// As [`trace_replay`]; `evict` must hold `n_evict >= 1` addresses of zero-filled lines.
+#[inline(never)]
+pub unsafe fn trace_replay_evict(trace: *const u16, count: u64, table: *const usize, evict: *const usize, n_evict: u64) {
+    asm!(
+        "2:",
+        "ldrh {i:w}, [{t}]",
+        "add {t}, {t}, #2",
+        "ldr {a}, [{tab}, {i}, lsl #3]",
+        "ldr {v}, [{a}]",
+        "add {t}, {t}, {v}",
+        "add {j}, {ne}, {v}",
+        "3:",
+        "sub {j}, {j}, #1",
+        "ldr {a}, [{ev}, {j}, lsl #3]",
+        "ldr {v}, [{a}]",
+        "add {j}, {j}, {v}",
+        "cbnz {j}, 3b",
+        "add {t}, {t}, {v}",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        t = inout(reg) trace => _,
+        tab = in(reg) table,
+        ev = in(reg) evict,
+        ne = in(reg) n_evict,
+        n = inout(reg) count => _,
+        i = out(reg) _,
+        a = out(reg) _,
+        v = out(reg) _,
+        j = out(reg) _,
+        options(nostack, readonly)
+    );
+}

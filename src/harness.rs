@@ -63,14 +63,14 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn start(cpu: usize, repeat: usize, out_dir: &Path) -> Result<Session> {
+    pub fn start(cpu: usize, repeat: usize, out_dir: &Path, label: &str) -> Result<Session> {
         affinity::pin_to(cpu)?;
         let pmu = Pmu::discover()?;
         let max_khz = guard::max_freq_khz(cpu)?;
         let day = out_dir.join(output::today_utc());
         std::fs::create_dir_all(&day)?;
         let env = crate::env::Env::collect();
-        std::fs::write(day.join("env.json"), serde_json::to_string_pretty(&env)?)?;
+        std::fs::write(day.join(format!("env_{label}.json")), serde_json::to_string_pretty(&env)?)?;
         // Ramp the governor to its top frequency before recording anything.
         kernels::alu_indep(std::hint::black_box(150_000_000));
         kernels::alu_indep(std::hint::black_box(150_000_000));
