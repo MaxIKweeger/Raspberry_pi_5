@@ -1,7 +1,7 @@
 # Méthodologie
 
 Ce document décrit, par expérience : l'hypothèse, le principe, les biais possibles et les références.
-Il est complété à chaque phase. État actuel : phases 0 à 3.
+Il est complété à chaque phase. État actuel : phases 0 à 5.
 
 ## Règles transverses (appliquées par `harness.rs`)
 
@@ -193,3 +193,64 @@ pour des flux à froid de longueur n, ce qui compte aussi les lignes préchargé
   aléatoire ; ns/store et lignes bus par store.
 - **Biais** : la table est elle-même lue en flux (constante additive) ; loads (dépendants) et stores (indépendants) ne mesurent pas la même
   grandeur (latence contre débit).
+
+## Phase 4 — prédicteurs de branchement (`a76probe run --exp branch`)
+
+**Génération de code à l'exécution plutôt que `build.rs`** : les paramètres (nombre de branches, espacement, distance de corrélation, profondeur d'appel,
+nombre de cibles) varient sur de larges plages ; `build.rs` imposerait des milliers de variantes précompilées. Choix : `mmap` en RW, écriture des mots de 32 bits
+produits par un assembleur à étiquettes (`a64.rs`), maintenance de cache (`dc cvau` sur les lignes de données, `ic ivau` sur les lignes d'instructions, `dsb ish`,
+`isb`, tailles de ligne lues dans `CTR_EL0`), puis `mprotect` R+X : jamais W+X simultanément. Vérification : (1) tests unitaires des encodeurs contre des encodages connus,
+(2) exécution du code généré avec résultat vérifié (`selftest_jit`) avant toute mesure.
+
+Chaque fonction générée suit l'ABI C (`x0` = itérations, `x1` = données). PMU (7 compteurs) : cycles, `BR_MIS_PRED`, `BR_RETIRED`, `INST_RETIRED`, `STALL_FRONTEND`,
+`L1I_CACHE_REFILL`, `ITLB_WALK`. Chaque configuration est mesurée 3 × 10 répétitions (ordre croissant / décroissant / croissant), préchauffage inclus.
+
+### E4.1 BTB
+- **Principe** : anneau de N `b` (un par emplacement, ordre aléatoire à cycle unique) espacés de S octets ; cycles par branche prise.
+- **Biais** : au-delà de 64 Kio de code, le cache d'instructions domine (L1I refill enregistré par branche) ; l'espacement de 4 o place plusieurs branches dans un même groupe de récupération.
+
+### E4.2 Motif aléatoire de période P
+- **Principe** : une branche `tbz` sur un octet de données aléatoire répété avec la période P (262 144 itérations par appel) ; mispredictions par branche.
+
+### E4.3 Portée de l'historique
+- **Principe** : la branche 0 teste un bit aléatoire ; K − 1 branches d'une même direction (prises `cbz xzr` / non prises `cbnz xzr`, 16 o d'écart) ; la branche finale teste
+  le même bit. Mispredictions par itération = 0,5 (branche 0) + taux de la finale. **Témoin** : la finale teste un bit indépendant (doit valoir 0,5). Les données sont
+  régénérées avant chaque répétition (aucune séquence n'est rejouée).
+
+### E4.4 Nombre de branches statiques
+- **Principe** : N `tbz` par itération, la branche i testant le bit (i mod 3) d'un compteur d'itérations (périodes 2, 4, 8) ; les deux issues continuent à l'instruction suivante (ou après des `nop` sautés).
+
+### E4.5 Prédicteur indirect
+- **Principe** : `ldrh idx ; ldr cible, [table, idx*8] ; br cible` ; T cibles (blocs de 16 o) visitées en tourniquet, ou séquence aléatoire de période P sur 16 cibles.
+
+### E4.6 Pile de retour
+- **Principe** : chaîne de D fonctions imbriquées ; variante **à sites d'appel aléatoires** (chaque niveau appelle le suivant depuis l'un de deux sites choisis par un bit
+  aléatoire) pour que l'adresse de retour de chaque niveau ne soit prédictible que par une pile de retour. L'excès de mispredictions au-dessus de 0,5·(D − 1) (les branches de choix de site)
+  mesure les retours mal prédits.
+
+### E4.7 Pénalité
+- **Principe** : une branche dépendant d'un octet de données dont la probabilité de prise varie (0, 1/32, 1/16, 1/8, 1/4, 1/2) ; régression des cycles par itération sur les mispredictions
+  par itération (180 points), IC95 % par bootstrap des paires. Variantes avec 4 et 8 multiplications dépendantes (`mul x,x,x` préserve le bit 0) avant la branche.
+
+## Phase 5 — cœur out-of-order (`a76probe run --exp ooo`)
+
+### E5.1 Fenêtres
+- **Principe** : boucle générée à l'exécution : générateur xorshift (3 `eor` avec décalage), `and` de masque, `ldr` aléatoire dans 16 Mio, un consommateur `add x7, x7, x5` (sans lui le
+  load, dont le résultat n'est pas lu, ne bloque pas la retraite), puis N remplisseurs indépendants d'une classe donnée, puis `subs` / `b.ne`. Le temps par itération T(N) est linéaire
+  par morceaux ; il saute quand une itération de plus ne tient plus dans la ressource limitante. Détection : différence de T entre points consécutifs moins la pente de la fin de
+  courbe (débit d'exécution), seuil 2,5 cycles ; grille de N au pas de 2 entre 24 et 144. Référence : même boucle avec le load dans le L1 (temps d'exécution seul).
+- **Deux pièges détectés pendant le développement** (conservés ici car instructifs) : (1) l'état du générateur était réinitialisé à chaque appel, donc chaque répétition rejouait les
+  mêmes adresses (1 Mio, qui tient en L3) et T saturait à 47 cycles au lieu de la latence DRAM ; corrigé en persistant l'état dans la page de travail ; (2) sans consommateur du load, le
+  cœur ne bloquait pas la retraite : T(0) était trop bas ; corrigé par le consommateur.
+- **Biais** : la taille estimée d'une ressource dépend du nombre d'instructions de base de la boucle qui l'utilisent (6 destinations entières, 1 load) ; les registres physiques sont
+  déduits en ajoutant les registres architecturaux ; la zone de 16 Mio reste dans la portée du TLB L2 (pas de page walks).
+
+### E5.2 MLP
+- **Principe** : K chaînes dépendantes indépendantes (K ≤ 22, registres `x2`–`x17` et `x19`–`x24`, ces derniers sauvegardés), cycles aléatoires disjoints ; cycles par load. Deux jeux :
+  320 Kio au total (servi par le L2) et 16 Mio (DRAM sans page walks).
+- **Biais** : le plateau peut refléter un débit plutôt qu'un nombre de requêtes en vol ; recoupé avec E5.1 à N = 0.
+
+### E5.3 Instructions
+- **Principe** : boucles `asm!` de 16 instructions déroulées ; latence = chaîne dépendante sur un registre, débit = 8 registres de destination indépendants (chacun utilisé deux fois).
+  Les macros produisent le texte de l'assembleur ; INST_RETIRED / instruction contrôle que la boucle exécute bien 16 + 2 instructions par itération.
+- **Biais** : `sdiv` dépend des opérandes ; les latences `fmla` / `sdot` sont celles de la chaîne d'accumulation ; `ldadd` mesure des atomiques sur des lignes présentes en L1.

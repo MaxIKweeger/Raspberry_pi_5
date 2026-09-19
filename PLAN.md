@@ -1,6 +1,6 @@
 # PLAN.md — a76probe
 
-Statut : **phases 0 à 3 implémentées et validées sur le Pi (2026-09-19) ; en attente du feu vert pour la phase 4.**
+Statut : **phases 0 à 5 implémentées et validées sur le Pi (2026-09-19) ; en attente du feu vert pour la phase 6.**
 Les chiffres du §1 viennent de commandes en lecture seule exécutées sur le Pi le 2026-09-19 ; les résultats de la phase 0 sont dans `RESULTS.md`.
 
 ### Décisions appliquées par défaut (réponse « ok » sans détail sur les questions du §5)
@@ -24,6 +24,9 @@ Les chiffres du §1 viennent de commandes en lecture seule exécutées sur le Pi
 - Phase 1 : sous-commande `run --all|--exp latency|tlb|bandwidth`, `Session`/`reps_raw` (tours d'ordre alterné), noyaux asm `chase`, `bw_read/bw_write/bw_copy`, `perm.rs`, `scripts/plot.py`.
 - Phase 2 : `phys.rs`, `lineset.rs`, `sim.rs`, `analysis.rs`, `cache_geom.rs`, noyaux `trace_replay`/`trace_replay_evict` ; sous-commande `analyze-cache` ; `Session::start` écrit `env_<label>.json`. Deux runs complets indépendants (le comportement du L2 dépend de l'état).
 - Phase 3 : `prefetch.rs`, noyaux `stream_load`/`stream_store`/`store_table`, `Buffer::new_zeroed`, sous-commandes `--exp prefetch|boundary`. Lancée sous `sudo` (pagemap) ; utilise aussi la mémoire CMA (`/dev/dma_heap/linux,cma`, groupe `video`, 32 Mio alloués puis libérés à la fin du processus). Governor `performance` réappliqué puis restauré à `ondemand`; fichiers créés par root rendus à l'utilisateur.
+- Phase 4 : génération de code à l'exécution (`a64.rs` : encodeurs testés ; `jit.rs` : `mmap` RW → écriture → `dc cvau`/`ic ivau`/`dsb`/`isb` (tailles de ligne lues dans `CTR_EL0`) → `mprotect` R+X, jamais W+X), choix justifié dans `docs/methodology.md` ; auto-test fonctionnel du code généré avant toute mesure. Sans `sudo` (hors governor).
+- Phase 5 : `ooo.rs` (fenêtres par remplissage après un miss DRAM, MLP, instructions par `asm!`). Deux pièges de mesure trouvés et corrigés (état du générateur rejoué ; load sans consommateur), documentés dans la méthodologie. Sans `sudo` (hors governor).
+- Le governor `performance` a été réappliqué pour les runs des phases 4 et 5 puis restauré à `ondemand`.
 - Aucune expérience de phase 1 n'utilise de hugepages (absentes) : le reach TLB est établi pour des pages de 16 Kio uniquement.
 
 ## 1. Constats sur la machine (mesurés / lus)

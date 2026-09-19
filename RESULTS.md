@@ -341,3 +341,157 @@ Limite : les loads de cette mesure sont dépendants (latence) et les stores ind�
   paire de pages virtuellement adjacentes et physiquement contiguës dans le pool ordinaire (0 candidat).
 - Le dépassement mesuré via le bus inclut d'éventuelles lectures de tables de pages (base n = 1 soustraite).
 - Un seul run complet ; les creux (n = 16 en flux +1, stores à n = 64/128/192/256) ne sont pas répliqués indépendamment.
+
+---
+
+# Phase 4 — prédicteurs de branchement
+
+Sources : `results/2026-09-19/branch_experiments.csv` (médianes poolées), `raw/branch.jsonl` (chaque répétition avec T, fréquence, validité),
+`phase4_run.log`, `env_phase4.json`. Un run complet (30 répétitions par point en 3 tours d'ordre alterné), cœur 1, governor `performance`,
+**14 670 répétitions, 0 invalide**, sans `sudo` (hors changement du governor). Figures : `docs/img/branch_{btb,predictors,ras}.png` (`scripts/plot_branch.py`).
+
+Code généré à l'exécution (`a64.rs` + `jit.rs`) : `mmap` RW, écriture, `dc cvau` / `dsb ish` / `ic ivau` / `dsb ish` / `isb` sur les lignes de
+cache lues dans `CTR_EL0`, puis `mprotect` R+X. Les encodeurs sont testés contre des encodages connus (tests unitaires) **et** le code généré
+est exécuté et vérifié fonctionnellement avant toute mesure (auto-test JIT : compteurs de branches, boucles, appels imbriqués, sauts indirects ;
+il a d'ailleurs détecté un accumulateur non initialisé lors du développement).
+
+## 4.1 BTB (anneau de N branches directes prises, à espacement S octets)
+
+| Constat | Valeur | Statut | Confiance |
+|---|---|---|---|
+| Palier « zéro bulle » | **1,00 cycle par branche prise** pour N ≤ 12 (espacement ≥ 8 o) ; 1,67 à N = 16 ; 1,93 à N = 24 ; **2,00** à N ≥ 32 | mesuré | haute |
+| Capacité du premier niveau | entre **12 et 16 branches** (N = 13–15 non testés) | déduit | moyenne |
+| Palier à 2 cycles | maintenu jusqu'à N ≥ 1024–4096 selon l'espacement : 2,03 à N = 2048 (S = 32), 2,05 à N = 1024 (S = 64), 2,50–2,52 jusqu'à N = 4096 (S = 16), 2,75 jusqu'à N = 4096 (S = 8) | mesuré | haute |
+| Capacité du second niveau | **≥ 4096 branches prises** (S = 16, 64 Kio de code, L1I refill 0,002/branche) : la borne supérieure est masquée par le cache d'instructions L1 de 64 Kio ; au-delà (S = 16, N = 6144) le coût passe à 4,3 puis 8,0 cycles avec 0,43–0,84 refill L1I par branche | mesuré (minorant) | moyenne |
+| Effet de densité | 4 o entre branches (une branche par instruction) : 5,3 cycles/branche dès N = 256 ; 2 branches par groupe de 16 o coûtent plus (2,75) que 1 par groupe (2,0–2,5) | mesuré | haute |
+
+## 4.2 Prédicteur conditionnel : apprentissage d'un motif aléatoire de période P
+
+0 misprediction par branche pour **P ≤ 256** ; 0,007 (P = 384), 0,012 (512), 0,036 (1024), 0,053 (2048), 0,072 (3072) ; **effondrement à partir de
+4096** (0,23), 0,38 (8192), 0,49 (65 536, ≈ hasard). Un motif aléatoire de 256 positions est appris exactement, jusqu'à ≈ 3000 positions il est
+appris à > 90 %. Mesuré, confiance haute.
+
+## 4.3 Portée de l'historique (branche finale corrélée à une branche aléatoire située K branches plus tôt)
+
+| Variante | Résultat | Lecture |
+|---|---|---|
+| Fillers **pris** (`cbz xzr`, 16 o d'écart) | taux de la branche finale ≤ 0,02 jusqu'à **K = 2048**, puis **0,52 dès K = 2304** (= témoin) | la corrélation est exploitée jusqu'à ≈ **2048 branches prises** en arrière, plus loin non |
+| Fillers **non pris** (`cbnz xzr`) | ≤ 0,03 jusqu'à K = 6144 (sauf des valeurs isolées 0,14–0,17 à K = 3 et 12) | les branches non prises **n'entrent pas dans l'historique** (ou n'y pèsent pas) |
+| Témoin (branche finale indépendante) | 0,50 ± 0,01 pour tout K ≤ 1536 (0,52–0,57 ensuite : les fillers eux-mêmes commencent à être mal prédits) | valide la mesure : la prédiction de la variante corrélée n'est pas un artefact |
+
+Confiance moyenne : la valeur de 2048 branches prises est la portée observée de la corrélation ; son interprétation en taille de registre
+d'historique n'est pas établie (mécanisme possiblement différent d'un simple registre à décalage). La première version du test (branches espacées
+de 4 o) donnait des résultats erratiques pour K ≥ 96 : artefact de densité de branches, corrigé par l'espacement de 16 o.
+
+## 4.4 Nombre de branches conditionnelles statiques (issues périodiques de période 2, 4 ou 8)
+
+Avec 16 o entre branches : 0 misprediction jusqu'à **N = 128**, ≤ 0,014 jusqu'à N = 768, 0,041 (1024), 0,156 (1536), 0,28 (2048), 0,18–0,31 (3072–8192,
+irrégulier), 0,47 (16 384). **Capacité ≈ 1000 branches** avant une dégradation notable, jusqu'à 4096 (= 64 Kio de code) ; le L1I pèse à partir de là. Avec 4 o
+entre branches, des mispredictions apparaissent dès N = 4 (0,16) : artefact de densité, conservé dans les données. Mesuré, confiance moyenne.
+
+## 4.5 Prédicteur indirect (`br xN`)
+
+| Test | Résultat |
+|---|---|
+| T cibles visitées en tourniquet (période T) | 0 misprediction pour **T ≤ 32** ; 0,021 à T = 48 ; **0,67 à T = 64**, puis 0,7–0,99 : **capacité entre 48 et 63 cibles** (falaise nette) |
+| 16 cibles, séquence aléatoire de période P | 0,000 pour P ≤ 512 ; 0,002 (1024), 0,018 (2048) ; **0,39 à P = 4096**, 0,77 (8192), 0,94 (32 768) |
+
+Mesuré, confiance haute pour la falaise à 48–64 cibles.
+
+## 4.6 Pile de retour (appels imbriqués de profondeur D, 2 sites d'appel aléatoires par niveau)
+
+Chaque niveau contient une branche aléatoire (0,5 misprediction) : on retranche 0,5·(D − 1). L'excès vaut −0,05 à D = 16, −0,04 à D = 17, puis
+**+0,46 (D = 18), +0,95 (19), +1,44 (20), +1,94 (21)…** : +0,5 par niveau au-delà de 17. La perte de l'entrée la plus externe (retour vers un site unique,
+prédit par un mécanisme de repli) est sans effet ; la perte de la suivante coûte 0,5. **Profondeur de la pile de retour : 16 entrées** (déduit ; confiance haute).
+Observation séparée (chaîne d'appels fixes, sans branche aléatoire) : 2,0 cycles par niveau jusqu'à D = 7, puis +8,8 à D = 8 et +9,7 à D = 9, environ 5 cycles
+par niveau à partir de D = 16 ; sans misprediction : **coût non expliqué** (aucune hypothèse testée).
+
+## 4.7 Coût d'une mauvaise prédiction
+
+| Résolution de la branche | Pénalité (pente cycles/misprediction, IC95 %) | Cycles/itération sans misprediction |
+|---|---|---|
+| immédiate (condition disponible tôt) | **14,81 cycles** [14,74 ; 14,86] | 1,95 |
+| après 4 multiplications dépendantes | 23,50 [23,46 ; 23,53] | 11,95 |
+| après 8 multiplications dépendantes | 32,96 [32,83 ; 33,06] | 23,87 |
+
+180 points par ligne (6 probabilités d'issue × 30 répétitions). La pénalité minimale est ≈ **15 cycles** ; une condition qui se résout plus tard l'allonge
+(≈ +2,2 cycles par multiplication dépendante, moins que leur latence de 4 cycles : le recouvrement n'est pas complet). Mesuré ; confiance haute pour la valeur
+minimale, moyenne pour son interprétation.
+
+## Limites de la phase 4
+
+- Le BTB de second niveau n'est borné que par le bas (≥ 4096 branches) : le L1I de 64 Kio et son contenu masquent la capacité réelle ; aucun test n'a séparé BTB et I-cache au-delà.
+- La « portée d'historique » est mesurée en branches prises avec des motifs répétitifs ; des historiques plus riches (chemins variés) pourraient réduire la portée utile.
+- Les tests de capacité (4.2, 4.4, 4.5) dépendent de la structure des motifs (périodique, aléatoire) ; d'autres motifs peuvent donner d'autres capacités.
+- Les espacements de 4 o entre branches créent des artefacts (BTB/groupes de récupération) : les résultats correspondants ne sont pas des capacités.
+- Le coût par niveau de la chaîne d'appels au-delà de D = 7 n'est pas expliqué.
+- Un seul run complet ; pas de réplication indépendante.
+
+---
+
+# Phase 5 — cœur out-of-order
+
+Sources : `results/2026-09-19/ooo_experiments.csv` (médianes poolées), `raw/ooo.jsonl`, `phase5_run.log`, `env_phase5.json`. Un run complet (30 répétitions
+par point en 3 tours d'ordre alterné), cœur 1, governor `performance`, **15 960 répétitions, 0 invalide**, sans `sudo` (hors changement du governor).
+Figures : `docs/img/ooo_{window,instructions}.png` (`scripts/plot_ooo.py`). Aucune comparaison avec le guide d'optimisation Arm (PDF non fourni).
+
+## 5.1 Tailles des fenêtres (un load manquant en DRAM par itération + N instructions indépendantes)
+
+Chaque itération : 8 instructions fixes (3 pour le générateur pseudo-aléatoire, `and`, le load, un consommateur du load, `subs`, `b.ne`) + N remplisseurs.
+Le temps par itération T(N) est linéaire par morceaux et **saute** chaque fois qu'un nombre entier d'itérations cesse de tenir dans la fenêtre : la
+frontière « k itérations tiennent » se situe à N = C/k − (instructions de l'itération qui occupent la même ressource). Les sauts se placent aux valeurs
+prévues pour une capacité unique C, ce qui valide l'estimation (plusieurs frontières cohérentes par ressource) ; à grand N, T sature à ≈ 235–240 cycles = la latence
+DRAM mesurée séparément (235,5 cycles pour une chaîne dépendante, 98 ns, cohérent avec la phase 1).
+
+| Ressource (remplisseur) | Frontières observées (N) | Capacité déduite | Statut | Confiance |
+|---|---|---|---|---|
+| **Reorder buffer** (`nop`) | 118–120, 54–56, 34–36, 20–24, 16–20, 12–16, 8–12 (attendu pour C = 128 : 120, 56, 34,7, 24, 17,6, 13,3, 10,3) | **128 instructions** (127–128) | mesuré / déduit | haute |
+| **Registres entiers** (`add xN, xN, #1`) | 80–82 (+71 cycles), 36–38, 20–24, 12–16, … | ≈ **87 destinations entières en vol** (86–88) ; avec ≈ 31 registres architecturaux : ≈ 118–120 registres physiques | déduit | moyenne (nombre de registres physiques : faible) |
+| **Registres vectoriels** (`eor v.16b`) | 94–96 (+65), 46–48, 30–32, 20–24, … | ≈ **96 destinations vectorielles en vol** ; avec 32 registres architecturaux : ≈ 128 registres physiques | déduit | moyenne (registres physiques : faible) |
+| **File de loads** (`ldr xzr, [x1, #…]`, hits L1) | rampe de sauts à 34–36 (+42), 36–38, 38–40 ; 16–20, 8–12, … | ≈ **36 loads en vol** (36–42 : la rampe résiduelle entre 36 et 42 n'est pas expliquée) | déduit | moyenne à faible |
+| **Store buffer** (`str xzr, [x1, #…]`, hits L1) | 40–42 (+89), 42–44 (+10), 20–24, 12–16, … | ≈ **42 stores en vol** (41–43) | déduit | moyenne |
+
+Les débits des remplisseurs, lus sur la pente de T(N) à grand N, sont ≈ 4 `nop`/cycle, ≈ 3 `add`/cycle, 2 `eor` vectoriels/cycle, 2 loads/cycle et 0,74 store/cycle
+(1,35 cycle par store dans cette boucle).
+
+## 5.2 Parallélisme mémoire (K chaînes de chargements dépendants entrelacées)
+
+| Niveau | K = 1 | Plateau (K ≥ 12–14) | Parallélisme effectif | Lecture |
+|---|---|---|---|---|
+| Jeu dans le L2 (320 Kio) | 12,6 cycles | 2,2 cycles par load | 5,6 | le plateau est le débit L2 → L1 (≈ 29 o/cycle), pas un nombre de misses simultanés : ≥ 6 misses en vol suffisent |
+| DRAM (16 Mio, sans page walks) | 235,5 cycles | 26,0 cycles par load | **9,1** | **≈ 9 misses L1 simultanés** ; concorde avec 5.1 (30 cycles par itération à N = 0 pour 235 cycles de latence, soit ≈ 8 loads en vol) |
+
+Confiance moyenne : le plateau à 26 cycles par ligne (≈ 5,9 Go/s en accès aléatoires) peut aussi refléter la limite des accès DRAM aléatoires ; il donne néanmoins le nombre de
+requêtes en vol ≈ 9 dans les deux méthodes.
+
+## 5.3 Latence et débit d'instructions (cycles ; INST_RETIRED / instruction = 1,125 = 18/16 pour toutes : la boucle exécute bien ce qui est annoncé)
+
+| Instruction | Latence | Inverse du débit | Remarque |
+|---|---|---|---|
+| `add x,x,x` | **1** | **0,354** | 17 opérations ALU (16 `add` + `subs`) par 5,66 cycles = **3,0 par cycle** ⇒ 3 ALU entières (déduit) |
+| `mul x,x,x` (64 bits) | 4,06 | **3,0** | un 64-bit toutes les 3 cycles ; `madd` identique |
+| `madd x,x,x,x` | 4,06 (accumulateur) | 3,0 | |
+| `sdiv x,x,x` | 5 (÷ 1) | 20 (0x7fff… ÷ 3) | dépendant des données : deux jeux d'opérandes seulement |
+| `fadd d` | 2 | 0,5 | 2 par cycle |
+| `fmul d` | 3 | 0,5 | 2 par cycle |
+| `fmla v.4s` (NEON) | 2 (chaîne d'accumulation) | 0,5 | 2 par cycle ⇒ 2 × 4 lanes × 2 flops = 16 flops/cycle, soit ≈ 38 Gflop/s simple précision par cœur à 2,4 GHz (déduit, pic) |
+| `sdot v.4s, v.16b, v.16b` | 1 (chaîne d'accumulation) | 0,5 | 2 par cycle ⇒ 32 MAC int8/cycle |
+| `ldr x,[x]` (hit L1) | **4** | 0,5 | 2 loads par cycle |
+| `ldp x,x,[x]` | 4 | 1,0 | |
+| `ldp q,q,[x]` | — | 1,0 | 32 o/cycle depuis le L1 |
+| `str x,[x]` | — | 0,503 | 2 stores par cycle (même adresse) |
+| `stp x,x,[x]` | — | **3,0** | anormalement lent : **non expliqué** |
+| `dmb ish` | — | **7** | seul, en série |
+| `str` + `dmb ish` | — | **12** par paire | |
+| `ldar x,[x]` | 4 | 0,5 | identique à `ldr` dans ces conditions |
+| `stlr x,[x]` | — | 0,501 | idem `str` |
+| `ldadd` (LSE) | — | **13** | même ligne ou 4 lignes : non pipeliné |
+
+## Limites de la phase 5
+
+- Les tailles de fenêtre supposent que les `nop` occupent des entrées du ROB (confirmé par la cohérence des frontières multiples avec C = 128) ; la présence d'un nombre précis d'entrées pour d'autres classes d'instructions n'est pas testée.
+- Le nombre de registres physiques est déduit du nombre de destinations en vol **plus** les registres architecturaux : l'hypothèse (31 entiers, 32 vectoriels) n'est pas vérifiée.
+- La rampe de sauts entre 36 et 42 pour les loads reste ambiguë : la file de loads est donnée comme une plage.
+- Le plateau du test MLP en DRAM peut être limité par le débit des accès aléatoires.
+- `sdiv` : seulement deux jeux d'opérandes ; `stp` : le débit de 3 cycles n'est pas expliqué ; `sdot` et `fmla` : latence mesurée sur la chaîne d'accumulation uniquement.
+- Un seul run complet ; pas de réplication indépendante.

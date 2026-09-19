@@ -11,10 +11,9 @@ confidence level and is labelled **measured**, **deduced** or **hypothesis**. Re
 contradict the spec or our expectations are documented, not smoothed away — negative and ambiguous
 results are results.
 
-> **Status: Phases 0 (foundations), 1 (memory hierarchy), 2 (cache geometry and replacement) and 3
-> (prefetchers) are complete.** The measurement chain is validated on real hardware; curves for cache/DRAM
-> latency, TLB reach, NEON bandwidth, measured cache geometry and hardware-prefetcher behaviour are available.
-> Phases 4-6 are not written yet; see the [roadmap](#roadmap).
+> **Status: Phases 0 to 5 are complete** (foundations, memory hierarchy, cache geometry and replacement,
+> prefetchers, branch predictors, out-of-order core). Phase 6 (inter-core effects) is not written yet;
+> see the [roadmap](#roadmap).
 
 ## Why this is harder than it looks
 
@@ -195,6 +194,67 @@ Boundaries (16-line cold streams; the physically contiguous case uses 32 MiB fro
 - Kept in the record without smoothing: non-monotonic partial gains at strides 3, 5, 10 with data in L2; an unusually good stride of 16
   lines in DRAM; a reproducible dip at n = 16 for +1 streams; store streams whose run-ahead vanishes at n = 64, 128, 192, 256 but not at 96.
 
+## Phase 4 results: branch predictors
+
+The test code is **generated at run time** (`mmap` RW, write, `dc cvau` / `ic ivau` cache maintenance, `mprotect` R+X, never W+X), by a small assembler
+with unit-tested encoders and a functional self-test of every generated function before any measurement. One full run: 14 670 repetitions, 30 per point,
+0 flagged invalid. Raw data: [`raw/branch.jsonl`](results/2026-09-19/raw/branch.jsonl); table:
+[`branch_experiments.csv`](results/2026-09-19/branch_experiments.csv).
+
+![BTB](docs/img/branch_btb.png)
+
+![Predictors](docs/img/branch_predictors.png)
+
+| Predictor | Measured result | Confidence |
+|---|---|---|
+| Taken-branch cost (BTB) | **1 cycle** per taken branch up to ≈ 12 branches, 1.67 at 16, **2 cycles** from 32 branches up to ≥ 1024–4096 branches | high |
+| BTB capacity | first level between **12 and 16** branches; second level **≥ 4096** taken branches (bounded from below only: the 64 KiB instruction cache takes over) | medium / lower bound |
+| Conditional predictor, random pattern | learned exactly up to a period of **256** positions, > 90 % up to ≈ 3000, collapses at ≥ 4096 | high |
+| History reach | a branch correlated with one **2048** taken branches earlier is still predicted (rate ≤ 0.02); at 2304 it is not (0.52 = the independent control) | medium |
+| Not-taken branches | they do **not** consume history (correlation survives 6144 not-taken fillers) | medium |
+| Distinct conditional branches | ≈ **1000** static branches predicted almost perfectly (period-2/4/8 outcomes); degrades from 1024 to 1536 | medium |
+| Indirect predictor | **48–63 targets** visited in a fixed cycle (0 mispredictions up to 32, 0.02 at 48, 0.67 at 64); a random sequence over 16 targets is learned up to a period of ≈ 1024–2048 | high |
+| Return stack | **16 entries** (extra mispredictions only appear from call depth 18, +0.5 per extra level) | high |
+| Misprediction penalty | **≈ 15 cycles** (14.81 [14.74, 14.86]) when the branch resolves early; +2.2 cycles per dependent multiply that delays its resolution | high |
+
+![Return stack](docs/img/branch_ras.png)
+
+Kept in the record: adjacent branches (4 bytes apart) produce artefacts in several tests (they are reported as such, not as capacities); a fixed call chain costs
+2 cycles per level up to depth 7, then ≈ 5 cycles per level, with no misprediction, for a reason not identified; the history reach of 2048 taken branches is an
+observation whose micro-architectural meaning (register length versus another mechanism) is not established.
+
+## Phase 5 results: the out-of-order core
+
+One full run (15 960 repetitions, 30 per point, 0 flagged invalid). Raw data: [`raw/ooo.jsonl`](results/2026-09-19/raw/ooo.jsonl); table:
+[`ooo_experiments.csv`](results/2026-09-19/ooo_experiments.csv). Window sizes come from a generated loop with **one independent DRAM miss per iteration followed by
+N independent filler instructions**: the time per iteration jumps whenever one more iteration stops fitting in the limiting resource, so the jump positions (several
+per resource, all consistent with a single capacity) give its size.
+
+![Window sizes](docs/img/ooo_window.png)
+
+| Resource | Measured size | Confidence |
+|---|---|---|
+| Reorder buffer | **128 instructions** (jumps at N = 118-120, 54-56, 34-36, 20-24, ... match 128/k - 8 for every k) | high |
+| Integer registers | ≈ **87** integer destinations in flight (≈ 118-120 physical registers if 31 are architectural) | medium (physical count: low) |
+| Vector registers | ≈ **96** vector destinations in flight (≈ 128 physical registers if 32 are architectural) | medium (physical count: low) |
+| Load queue | ≈ **36** loads in flight (36-42) | medium-low |
+| Store buffer | ≈ **42** stores in flight (41-43) | medium |
+| L1 miss parallelism (MLP) | ≈ **9** outstanding L1 misses (DRAM latency 235 cycles = 98 ns; saturates at 26 cycles per load) | medium |
+
+Instruction latency and reciprocal throughput (cycles, INST_RETIRED confirms the loop content):
+
+![Instructions](docs/img/ooo_instructions.png)
+
+- **Integer**: `add` 1 / 0.354 (3.0 ALU operations per cycle including the loop counter, so 3 integer ALUs), 64-bit `mul` and `madd` latency 4 but only one per **3 cycles**, `sdiv` 5 (divide by 1) and
+  20 cycles per operation for a large dividend.
+- **FP / NEON**: `fadd` 2, `fmul` 3, `fmla v.4s` 2 and `sdot` 1 on the accumulator chain, all at **2 per cycle**: about 16 single-precision flops per cycle per core (≈ 38 Gflop/s peak at 2.4 GHz, deduced).
+- **Memory**: `ldr` latency 4, 2 loads per cycle; `ldp x` and `ldp q` 1 per cycle (32 B/cycle from L1); `ldar` and `stlr` cost the same as `ldr` and `str`;
+  `dmb ish` 7 cycles alone (12 per `str` + `dmb` pair); LSE `ldadd` 13 cycles per atomic, not pipelined.
+- Unexplained and kept in the record: `stp x,x` at 3 cycles per instruction, a load-queue ramp of jumps between N = 36 and 42, and the DRAM MLP plateau that may be a random-access throughput limit rather than a buffer size.
+
+Two measurement traps found and fixed during development are documented in [`docs/methodology.md`](docs/methodology.md) (a replayed random sequence that hit in cache, and a load whose unused
+result did not block retirement).
+
 ## Roadmap
 
 | Phase | Topic | Status |
@@ -203,8 +263,8 @@ Boundaries (16-line cold streams; the physically contiguous case uses 32 MiB fro
 | 1 | Memory hierarchy: pointer-chasing latency, TLB reach, NEON bandwidth (1–4 cores) | **done** |
 | 2 | Cache geometry and replacement policy (compared with software LRU/PLRU/FIFO/random/SRRIP/NRU models) | **done** |
 | 3 | Hardware prefetchers: stride range, streams, distance, page-boundary behaviour | **done** |
-| 4 | Branch predictors via runtime-generated code: BTB, history length, indirect, return stack, penalty | planned |
-| 5 | Out-of-order core: ROB / load queue / store buffer / register files, MLP, instruction latency and throughput | planned |
+| 4 | Branch predictors via runtime-generated code: BTB, history length, indirect, return stack, penalty | **done** |
+| 5 | Out-of-order core: ROB / load queue / store buffer / register files, MLP, instruction latency and throughput | **done** |
 | 6 | Inter-core: 4×4 line-transfer latency, store-to-load forwarding, unaligned access costs | planned |
 
 Each phase ends with a summary of results, surprises, limits and remaining uncertainties, and waits
@@ -254,6 +314,8 @@ On the Pi directly:
 ./a76probe run --all --core 1 --repeat 30            # or --exp latency | tlb | bandwidth
 sudo ./a76probe run --exp cache --core 1 --repeat 30   # phase 2 (about 12 minutes; root only for pagemap)
 ./a76probe run --exp prefetch --core 1 --repeat 30      # phase 3 (about 20 minutes; run as root to also classify boundaries)
+./a76probe run --exp branch --core 1 --repeat 30        # phase 4 (about 15 minutes; no root needed)
+./a76probe run --exp ooo --core 1 --repeat 30           # phase 5 (about 12 minutes; no root needed)
 ./a76probe analyze-cache --raw results/<date>/raw/cache.jsonl   # re-score replacement policies offline
 ./a76probe pmu-list                  # PMU events exposed by the kernel
 ```
@@ -289,13 +351,17 @@ src/
   phys.rs        pagemap reader (physical addresses of our own pages, root only)
   lineset.rs     selection of lines with prescribed physical-address bits
   cache_geom.rs  phase 2: line size, associativity, index bits, replacement, inclusion
+  a64.rs         AArch64 instruction encoders and a label-resolving assembler (unit-tested)
+  jit.rs         executable buffers: mmap RW, cache maintenance, mprotect R+X
+  branch.rs      phase 4: BTB, history, capacity, indirect, return stack, misprediction penalty
+  ooo.rs         phase 5: window sizes (ROB, register files, load/store queues), MLP, instruction latency/throughput
   prefetch.rs    phase 3: stride sweep, interleaved streams, run-ahead, boundaries, stores
   sim.rs         software models of one cache set (LRU, tree-PLRU, FIFO, random, SRRIP, BRRIP, NRU, SRRIP-FP)
   analysis.rs    offline scoring of measured replacement signatures against the models
 docs/
   methodology.md per-experiment hypothesis, principle, possible biases (French)
   asm/           archived objdump output of the asm kernels
-scripts/        plot.py (phase 1), plot_cache.py (phase 2) and plot_prefetch.py (phase 3) draw the figures from the CSV/JSONL files (matplotlib)
+scripts/        plot.py (phase 1), plot_cache.py (phase 2), plot_prefetch.py (phase 3), plot_branch.py (phase 4) and plot_ooo.py (phase 5) draw the figures from the CSV/JSONL files (matplotlib)
 results/<date>/  env.json, CSV curves and raw/*.jsonl produced on the Pi
 PLAN.md          architecture, technical decisions, risks, open questions (French)
 RESULTS.md       every finding: value, method, confidence, source file (French)
