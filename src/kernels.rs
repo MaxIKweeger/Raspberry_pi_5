@@ -85,3 +85,109 @@ pub unsafe fn load_lines(p: *const u8, lines: u64) {
         options(nostack, readonly)
     );
 }
+
+/// Instructions per iteration of [`chase`]: 16 dependent `ldr` + `subs` + `b.ne`.
+pub const CHASE_LOADS_PER_ITER: u64 = 16;
+
+/// Dependent pointer chase: `loads` must be a non-zero multiple of 16. Each node's first 8 bytes
+/// hold the address of its successor; the final pointer is returned so the chain can continue.
+///
+/// # Safety
+/// `p` must be a node of a valid chain (every reachable node readable).
+#[inline(never)]
+pub unsafe fn chase(p: *const u8, loads: u64) -> *const u8 {
+    debug_assert!(loads > 0 && loads % CHASE_LOADS_PER_ITER == 0);
+    let mut cur = p;
+    asm!(
+        "2:",
+        "ldr {p}, [{p}]", "ldr {p}, [{p}]", "ldr {p}, [{p}]", "ldr {p}, [{p}]",
+        "ldr {p}, [{p}]", "ldr {p}, [{p}]", "ldr {p}, [{p}]", "ldr {p}, [{p}]",
+        "ldr {p}, [{p}]", "ldr {p}, [{p}]", "ldr {p}, [{p}]", "ldr {p}, [{p}]",
+        "ldr {p}, [{p}]", "ldr {p}, [{p}]", "ldr {p}, [{p}]", "ldr {p}, [{p}]",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        p = inout(reg) cur,
+        n = inout(reg) loads / CHASE_LOADS_PER_ITER => _,
+        options(nostack, readonly)
+    );
+    cur
+}
+
+/// Bytes moved per iteration of the NEON bandwidth kernels (8 x 16-byte registers).
+pub const BW_BYTES_PER_ITER: usize = 128;
+
+/// Streaming read with `ldp q`; `bytes` must be a non-zero multiple of 128.
+///
+/// # Safety
+/// `p .. p + bytes` must be readable.
+#[inline(never)]
+pub unsafe fn bw_read(p: *const u8, bytes: usize) {
+    asm!(
+        "2:",
+        "ldp q0, q1, [{p}]",
+        "ldp q2, q3, [{p}, #32]",
+        "ldp q4, q5, [{p}, #64]",
+        "ldp q6, q7, [{p}, #96]",
+        "add {p}, {p}, #128",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        p = inout(reg) p => _,
+        n = inout(reg) bytes / BW_BYTES_PER_ITER => _,
+        out("v0") _, out("v1") _, out("v2") _, out("v3") _,
+        out("v4") _, out("v5") _, out("v6") _, out("v7") _,
+        options(nostack, readonly)
+    );
+}
+
+/// Streaming write with `stp q`; `bytes` must be a non-zero multiple of 128.
+///
+/// # Safety
+/// `p .. p + bytes` must be writable.
+#[inline(never)]
+pub unsafe fn bw_write(p: *mut u8, bytes: usize) {
+    asm!(
+        "movi v0.16b, #0x5a",
+        "movi v1.16b, #0x5a",
+        "2:",
+        "stp q0, q1, [{p}]",
+        "stp q0, q1, [{p}, #32]",
+        "stp q0, q1, [{p}, #64]",
+        "stp q0, q1, [{p}, #96]",
+        "add {p}, {p}, #128",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        p = inout(reg) p => _,
+        n = inout(reg) bytes / BW_BYTES_PER_ITER => _,
+        out("v0") _, out("v1") _,
+        options(nostack)
+    );
+}
+
+/// Copy with `ldp q` / `stp q`; `bytes` must be a non-zero multiple of 128.
+///
+/// # Safety
+/// `src .. src + bytes` readable, `dst .. dst + bytes` writable, regions must not overlap.
+#[inline(never)]
+pub unsafe fn bw_copy(src: *const u8, dst: *mut u8, bytes: usize) {
+    asm!(
+        "2:",
+        "ldp q0, q1, [{s}]",
+        "ldp q2, q3, [{s}, #32]",
+        "ldp q4, q5, [{s}, #64]",
+        "ldp q6, q7, [{s}, #96]",
+        "stp q0, q1, [{d}]",
+        "stp q2, q3, [{d}, #32]",
+        "stp q4, q5, [{d}, #64]",
+        "stp q6, q7, [{d}, #96]",
+        "add {s}, {s}, #128",
+        "add {d}, {d}, #128",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        s = inout(reg) src => _,
+        d = inout(reg) dst => _,
+        n = inout(reg) bytes / BW_BYTES_PER_ITER => _,
+        out("v0") _, out("v1") _, out("v2") _, out("v3") _,
+        out("v4") _, out("v5") _, out("v6") _, out("v7") _,
+        options(nostack)
+    );
+}

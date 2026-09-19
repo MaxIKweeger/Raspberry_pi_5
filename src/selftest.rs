@@ -7,13 +7,13 @@
 //! 4. how many events fit in one group without multiplexing.
 
 use crate::env::Env;
-use crate::harness::{metric, metric_exp, Collector, Metric};
+use crate::harness::{metric, metric_exp, run_window, Collector, Metric};
 use crate::output::{self, Jsonl};
 use crate::pmu::{Group, Pmu};
 use crate::stats::percentile_sorted;
 use crate::timing::{cntfrq, cntvct, ticks_to_ns};
 use crate::{affinity, guard, kernels, mem::Buffer};
-use anyhow::{bail, Result};
+use anyhow::Result;
 use serde_json::json;
 use std::hint::black_box;
 use std::path::PathBuf;
@@ -22,19 +22,6 @@ pub struct Opts {
     pub core: usize,
     pub repeat: usize,
     pub out_dir: PathBuf,
-}
-
-fn run_window(g: &Group, frq: u64, f: impl FnOnce()) -> Result<(f64, Vec<u64>)> {
-    g.reset_enable()?;
-    let t0 = cntvct();
-    f();
-    let t1 = cntvct();
-    g.disable()?;
-    let r = g.read()?;
-    if r.multiplexed() {
-        bail!("group was multiplexed ({}/{} ns running)", r.time_running, r.time_enabled);
-    }
-    Ok((ticks_to_ns(t1 - t0, frq), r.values))
 }
 
 #[derive(Clone, Copy)]

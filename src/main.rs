@@ -1,6 +1,6 @@
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 mod cli {
-    use a76probe::{env::Env, pmu::Pmu, selftest};
+    use a76probe::{env::Env, harness::Session, mem_bw, mem_lat, pmu::Pmu, selftest};
     use anyhow::Result;
     use clap::{Parser, Subcommand};
     use std::path::PathBuf;
@@ -28,6 +28,21 @@ mod cli {
             #[arg(long, default_value = "results")]
             out_dir: PathBuf,
         },
+        /// Run experiments (phase 1: latency, tlb, bandwidth).
+        Run {
+            /// Run every implemented experiment.
+            #[arg(long)]
+            all: bool,
+            /// Experiment(s) to run: latency, tlb, bandwidth.
+            #[arg(long = "exp", value_name = "NAME")]
+            exps: Vec<String>,
+            #[arg(long, default_value_t = 1)]
+            core: usize,
+            #[arg(long, default_value_t = 30)]
+            repeat: usize,
+            #[arg(long, default_value = "results")]
+            out_dir: PathBuf,
+        },
         /// List PMU events exposed by the kernel for this CPU.
         PmuList,
     }
@@ -42,6 +57,26 @@ mod cli {
                 println!("{json}");
             }
             Cmd::Selftest { core, repeat, out_dir } => selftest::run(&selftest::Opts { core, repeat, out_dir })?,
+            Cmd::Run { all, exps, core, repeat, out_dir } => {
+                let known = ["latency", "tlb", "bandwidth"];
+                let wanted: Vec<String> = if all { known.iter().map(|s| s.to_string()).collect() } else { exps };
+                if wanted.is_empty() {
+                    anyhow::bail!("nothing to run: pass --all or --exp <{}>", known.join("|"));
+                }
+                if let Some(bad) = wanted.iter().find(|w| !known.contains(&w.as_str())) {
+                    anyhow::bail!("unknown experiment '{bad}' (known: {})", known.join(", "));
+                }
+                let sess = Session::start(core, repeat, &out_dir)?;
+                println!("core {core}, expected freq {} kHz, CNTFRQ {} Hz, {repeat} reps", sess.max_khz, sess.frq);
+                for w in &wanted {
+                    match w.as_str() {
+                        "latency" => mem_lat::run_latency(&sess)?,
+                        "tlb" => mem_lat::run_tlb(&sess)?,
+                        "bandwidth" => mem_bw::run_bw(&sess)?,
+                        _ => unreachable!(),
+                    }
+                }
+            }
             Cmd::PmuList => {
                 let p = Pmu::discover()?;
                 println!("device {} type {} cpus {}", p.device, p.type_, p.cpus);
