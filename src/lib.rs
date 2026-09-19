@@ -27,6 +27,8 @@ pub mod phys;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 pub mod pmu;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+pub mod prefetch;
+#[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 pub mod selftest;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 pub mod timing;

@@ -33,7 +33,7 @@ mod cli {
             /// Run every implemented experiment.
             #[arg(long)]
             all: bool,
-            /// Experiment(s) to run: latency, tlb, bandwidth, cache.
+            /// Experiment(s) to run: latency, tlb, bandwidth, cache, prefetch.
             #[arg(long = "exp", value_name = "NAME")]
             exps: Vec<String>,
             #[arg(long, default_value_t = 1)]
@@ -67,7 +67,7 @@ mod cli {
             }
             Cmd::Selftest { core, repeat, out_dir } => selftest::run(&selftest::Opts { core, repeat, out_dir })?,
             Cmd::Run { all, exps, core, repeat, out_dir } => {
-                let known = ["latency", "tlb", "bandwidth", "cache"];
+                let known = ["latency", "tlb", "bandwidth", "cache", "prefetch", "boundary"];
                 let wanted: Vec<String> = if all { known.iter().map(|s| s.to_string()).collect() } else { exps };
                 if wanted.is_empty() {
                     anyhow::bail!("nothing to run: pass --all or --exp <{}>", known.join("|"));
@@ -75,7 +75,7 @@ mod cli {
                 if let Some(bad) = wanted.iter().find(|w| !known.contains(&w.as_str())) {
                     anyhow::bail!("unknown experiment '{bad}' (known: {})", known.join(", "));
                 }
-                let label = if wanted.iter().any(|w| w == "cache") { "phase2" } else { "phase1" };
+                let label = if wanted.iter().any(|w| w == "prefetch" || w == "boundary") { "phase3" } else if wanted.iter().any(|w| w == "cache") { "phase2" } else { "phase1" };
                 let sess = Session::start(core, repeat, &out_dir, label)?;
                 println!("core {core}, expected freq {} kHz, CNTFRQ {} Hz, {repeat} reps", sess.max_khz, sess.frq);
                 for w in &wanted {
@@ -84,6 +84,8 @@ mod cli {
                         "tlb" => mem_lat::run_tlb(&sess)?,
                         "bandwidth" => mem_bw::run_bw(&sess)?,
                         "cache" => cache_geom::run_cache(&sess)?,
+                        "prefetch" => a76probe::prefetch::run_prefetch(&sess)?,
+                        "boundary" => a76probe::prefetch::run_boundary_only(&sess)?,
                         _ => unreachable!(),
                     }
                 }

@@ -257,3 +257,63 @@ pub unsafe fn trace_replay_evict(trace: *const u16, count: u64, table: *const us
         options(nostack, readonly)
     );
 }
+
+/// `n` dependent loads at `p, p+stride, ...`. Every touched line must hold zero in its first 8
+/// bytes: the loaded zero is added to the address so each load waits for the previous one.
+///
+/// # Safety
+/// All `n` addresses must be readable and zero-filled.
+#[inline(never)]
+pub unsafe fn stream_load(p: *const u8, stride: isize, n: u64) {
+    asm!(
+        "2:",
+        "ldr {v}, [{p}]",
+        "add {p}, {p}, {s}",
+        "add {p}, {p}, {v}",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        p = inout(reg) p => _,
+        s = in(reg) stride,
+        n = inout(reg) n => _,
+        v = out(reg) _,
+        options(nostack, readonly)
+    );
+}
+
+/// `n` stores of zero at `p, p+stride, ...` (independent, so limited only by the store buffer).
+///
+/// # Safety
+/// All `n` addresses must be writable.
+#[inline(never)]
+pub unsafe fn stream_store(p: *mut u8, stride: isize, n: u64) {
+    asm!(
+        "2:",
+        "str xzr, [{p}]",
+        "add {p}, {p}, {s}",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        p = inout(reg) p => _,
+        s = in(reg) stride,
+        n = inout(reg) n => _,
+        options(nostack)
+    );
+}
+
+/// Stores of zero to the addresses listed in `table` (read sequentially).
+///
+/// # Safety
+/// `table` holds `n` writable addresses.
+#[inline(never)]
+pub unsafe fn store_table(table: *const usize, n: u64) {
+    asm!(
+        "2:",
+        "ldr {a}, [{t}], #8",
+        "str xzr, [{a}]",
+        "subs {n}, {n}, #1",
+        "b.ne 2b",
+        t = inout(reg) table => _,
+        n = inout(reg) n => _,
+        a = out(reg) _,
+        options(nostack)
+    );
+}

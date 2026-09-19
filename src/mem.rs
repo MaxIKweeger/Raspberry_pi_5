@@ -9,6 +9,15 @@ pub struct Buffer {
 
 impl Buffer {
     pub fn new(len: usize) -> Result<Buffer> {
+        Self::create(len, true)
+    }
+
+    /// Like `new`, but leaves every byte zero (no touch pass): needed when the lines must read as 0.
+    pub fn new_zeroed(len: usize) -> Result<Buffer> {
+        Self::create(len, false)
+    }
+
+    fn create(len: usize, touch: bool) -> Result<Buffer> {
         // SAFETY: anonymous mapping, no fd; result checked against MAP_FAILED.
         let ptr = unsafe {
             libc::mmap(
@@ -28,12 +37,14 @@ impl Buffer {
         let buf = Buffer { ptr: ptr as *mut u8, len, locked };
         // Touch every page so the data is really resident and non-zero-page backed.
         // SAFETY: the mapping is len bytes, writable.
-        unsafe {
+        if touch {
+            unsafe {
             let mut p = buf.ptr;
             let end = buf.ptr.add(len);
             while p < end {
                 p.write_volatile(1);
                 p = p.add(4096);
+            }
             }
         }
         Ok(buf)

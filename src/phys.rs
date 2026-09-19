@@ -16,7 +16,7 @@ const PM_PRESENT: u64 = 1 << 63;
 const PM_SWAPPED: u64 = 1 << 62;
 const PM_PFN_MASK: u64 = (1 << 55) - 1;
 
-fn read_pfns(vbase: usize, npages: usize) -> Result<Vec<u64>> {
+pub fn read_pfns(vbase: usize, npages: usize) -> Result<Vec<u64>> {
     let f = File::open("/proc/self/pagemap").context("open /proc/self/pagemap")?;
     let mut raw = vec![0u8; npages * 8];
     let off = (vbase >> PAGE_SHIFT) as u64 * 8;
