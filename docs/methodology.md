@@ -1,7 +1,7 @@
 # Méthodologie
 
 Ce document décrit, par expérience : l'hypothèse, le principe, les biais possibles et les références.
-Il est complété à chaque phase. État actuel : phases 0 à 5.
+Il est complété à chaque phase. État actuel : phases 0 à 6.
 
 ## Règles transverses (appliquées par `harness.rs`)
 
@@ -254,3 +254,22 @@ Chaque fonction générée suit l'ABI C (`x0` = itérations, `x1` = données). P
 - **Principe** : boucles `asm!` de 16 instructions déroulées ; latence = chaîne dépendante sur un registre, débit = 8 registres de destination indépendants (chacun utilisé deux fois).
   Les macros produisent le texte de l'assembleur ; INST_RETIRED / instruction contrôle que la boucle exécute bien 16 + 2 instructions par itération.
 - **Biais** : `sdiv` dépend des opérandes ; les latences `fmla` / `sdot` sont celles de la chaîne d'accumulation ; `ldadd` mesure des atomiques sur des lignes présentes en L1.
+
+## Phase 6 — inter-cœurs et cas particuliers (`a76probe run --exp multicore`)
+
+### E6.1 Ping-pong
+- **Principe** : deux threads épinglés (`sched_setaffinity`, vérifié), barrière de départ, boucles `asm!` : l'initiateur écrit `2i+1` (`stlr` ou `ldaddal`), attend `2i+2` (`ldar`) ; le
+  répondeur attend `2i+1`, écrit `2i+2`. Temps de l'initiateur par `CNTVCT` et compteur de cycles PMU ouvert dans ce thread ; latence aller simple = mesure / (2 × 200 000).
+  12 paires ordonnées, ordre alterné entre tours, matrice répétée sur 4 lignes de pages différentes.
+- **Biais** : un thread déprogrammé par le système allonge une répétition (traité par la médiane) ; la ligne est seule dans sa page ; le protocole mesure le transfert d'une ligne modifiée.
+
+### E6.2 Forwarding
+- **Principe** : boucle `asm!` de 8 paires « store puis load » dont la valeur lue alimente le store suivant (chaîne mémoire dépendante) ; cycles par paire. La référence sans chevauchement (autre ligne) n'a pas
+  de dépendance et sert de contrôle.
+- **Biais** : un load plus large que le store fournit des octets qui viennent peut-être du L1 ; le contenu n'est pas vérifié (seul le temps l'est).
+
+### E6.3 Accès non alignés
+- **Principe** : 8 pointeurs indépendants, chaque adresse utilisée deux fois par itération, jeu de 4 Kio dans le L1 ; décalages de 0 à 63 dans la ligne, plus des franchissements de frontière de 4 Kio et
+  de page de 16 Kio avec **deux frontières distinctes** alternées (huit frontières espacées de 16 Kio tomberaient dans les mêmes sets du L1 de 4 voies et donneraient des misses de conflit).
+  PMU : cycles, `L1D_CACHE`, `L1D_TLB`, `MEM_ACCESS`.
+- **Biais** : mêmes décalages dans la ligne pour les 8 pointeurs ⇒ même banque du L1 : plafond de 1 accès/cycle pour tous les cas.

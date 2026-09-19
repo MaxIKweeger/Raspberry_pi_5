@@ -11,9 +11,24 @@ confidence level and is labelled **measured**, **deduced** or **hypothesis**. Re
 contradict the spec or our expectations are documented, not smoothed away — negative and ambiguous
 results are results.
 
-> **Status: Phases 0 to 5 are complete** (foundations, memory hierarchy, cache geometry and replacement,
-> prefetchers, branch predictors, out-of-order core). Phase 6 (inter-core effects) is not written yet;
-> see the [roadmap](#roadmap).
+> **Status: all six phases are complete** (foundations, memory hierarchy, cache geometry and replacement,
+> prefetchers, branch predictors, out-of-order core, inter-core effects). Every result comes with its raw data,
+> a confidence level, and the observations that remain unexplained.
+
+## Cortex-A76 on the Raspberry Pi 5 at a glance (all values measured here; confidence in the per-phase sections)
+
+| Area | Parameter | Value |
+|---|---|---|
+| Caches | L1D | 64 KiB, 4 ways, 256 sets (physical bits 6-13), 64 B lines, tree-PLRU, 4-cycle load-to-use |
+| | L2 (per core) | 512 KiB, 8 ways, 1024 sets (bits 6-15), 64 B lines, pseudo-LRU (variant not identified), ≈ 12 cycles |
+| | L3 (shared) | 2 MiB, 16 ways, 2048 sets (bits 6-16), victim (exclusive of L2), ≈ 36-38 cycles |
+| | DRAM | ≈ 97-98 ns load-to-use; 13.8 GB/s read from one core |
+| Translation | 16 KiB pages | L1 D-TLB 48 entries, L2 TLB 1280 entries, +5 cycles for an L2 TLB hit, ≈ 18 cycles page walk |
+| Prefetch | strides | ±1 line into L1; up to **21 lines** for the L2/L3 prefetcher; **16 streams**; run-ahead ≈ 40 lines; stops at 16 KiB page boundaries |
+| Branches | BTB | 1 cycle up to ≈ 12 branches, 2 cycles up to ≥ 4096; history reach ≈ 2048 taken branches; indirect: 48-63 targets; return stack 16; **mispredict ≈ 15 cycles** |
+| Core | Out-of-order window | ROB **128**, ≈ 87 integer / ≈ 96 vector destinations in flight, load queue ≈ 36, store buffer ≈ 42, ≈ 9 outstanding L1 misses |
+| | Execution | 3 integer ALUs, 64-bit `mul` 1 per 3 cycles, 2 NEON FMA per cycle (≈ 38 Gflop/s SP peak), 2 loads per cycle |
+| Multicore | Line transfer | ≈ 70 ns (≈ 168 cycles) between cores; store forwarding 5.5 cycles |
 
 ## Why this is harder than it looks
 
@@ -255,6 +270,29 @@ Instruction latency and reciprocal throughput (cycles, INST_RETIRED confirms the
 Two measurement traps found and fixed during development are documented in [`docs/methodology.md`](docs/methodology.md) (a replayed random sequence that hit in cache, and a load whose unused
 result did not block retirement).
 
+## Phase 6 results: inter-core effects and access corner cases
+
+One full run (5070 repetitions, 30 per point, 0 flagged invalid). Raw data: [`raw/multicore.jsonl`](results/2026-09-19/raw/multicore.jsonl); table:
+[`multicore_experiments.csv`](results/2026-09-19/multicore_experiments.csv).
+
+![Inter-core transfer](docs/img/multicore_matrix.png)
+
+| Measurement | Result | Confidence |
+|---|---|---|
+| Cache-line transfer between two cores (store-release / load-acquire ping-pong) | **≈ 70 ns one way (≈ 168 cycles)**: 68.5-70.6 ns between neighbouring cores (0-1, 1-2, 2-3, 3-0), **72.0-72.5 ns between opposite cores** (0-2, 1-3); same pattern on four different lines | high (values) / medium (pair dependence) |
+| Same with an atomic add (`ldaddal`) | **69.1-69.8 ns**, no dependence on the pair of cores | high |
+| Store-to-load forwarding | **5.5 cycles** for most size/offset combinations (a plain L1 load is 4); **10.5 cycles** (slow path) for a byte or half-word taken at a non-zero offset inside a stored 8-byte word and for a byte store followed by a wide load; 7-8.5 cycles across a 64-byte line, **14.5-15.8 cycles** across a 16 KiB page | high |
+| Unaligned loads | practically **free** (1.0 cycle, 1 L1D access, even across a line; ≤ 1.7 cycles at a 4 KiB boundary) | medium |
+| Unaligned stores | **1 to 4 cycles** depending on the offset (worst at offsets 9, 15, 57, 63); **≈ 11 cycles and two L1D accesses** when a store crosses a 4 KiB or 16 KiB boundary | medium |
+
+![Store-to-load forwarding](docs/img/multicore_forwarding.png)
+
+![Unaligned accesses](docs/img/multicore_unaligned.png)
+
+Kept in the record: a load wider than the store, or overlapping it by half, does **not** show a forwarding failure here (a merge with L1 data cannot be told apart from partial forwarding by a timing
+test); a 4 KiB boundary costs a load 1.7 cycles while a 16 KiB page boundary (which is also a 4 KiB boundary) costs 1.0, unexplained; the first version of the boundary test measured L1 conflict
+misses because eight boundaries 16 KiB apart share the same L1 sets, and was replaced by two distinct boundaries.
+
 ## Roadmap
 
 | Phase | Topic | Status |
@@ -265,7 +303,7 @@ result did not block retirement).
 | 3 | Hardware prefetchers: stride range, streams, distance, page-boundary behaviour | **done** |
 | 4 | Branch predictors via runtime-generated code: BTB, history length, indirect, return stack, penalty | **done** |
 | 5 | Out-of-order core: ROB / load queue / store buffer / register files, MLP, instruction latency and throughput | **done** |
-| 6 | Inter-core: 4×4 line-transfer latency, store-to-load forwarding, unaligned access costs | planned |
+| 6 | Inter-core: 4×4 line-transfer latency, store-to-load forwarding, unaligned access costs | **done** |
 
 Each phase ends with a summary of results, surprises, limits and remaining uncertainties, and waits
 for review before the next one starts.
@@ -316,6 +354,7 @@ sudo ./a76probe run --exp cache --core 1 --repeat 30   # phase 2 (about 12 minut
 ./a76probe run --exp prefetch --core 1 --repeat 30      # phase 3 (about 20 minutes; run as root to also classify boundaries)
 ./a76probe run --exp branch --core 1 --repeat 30        # phase 4 (about 15 minutes; no root needed)
 ./a76probe run --exp ooo --core 1 --repeat 30           # phase 5 (about 12 minutes; no root needed)
+./a76probe run --exp multicore --core 1 --repeat 30     # phase 6 (about 6 minutes; uses all four cores)
 ./a76probe analyze-cache --raw results/<date>/raw/cache.jsonl   # re-score replacement policies offline
 ./a76probe pmu-list                  # PMU events exposed by the kernel
 ```
@@ -354,6 +393,7 @@ src/
   a64.rs         AArch64 instruction encoders and a label-resolving assembler (unit-tested)
   jit.rs         executable buffers: mmap RW, cache maintenance, mprotect R+X
   branch.rs      phase 4: BTB, history, capacity, indirect, return stack, misprediction penalty
+  multicore.rs   phase 6: cross-core ping-pong, store-to-load forwarding, unaligned accesses
   ooo.rs         phase 5: window sizes (ROB, register files, load/store queues), MLP, instruction latency/throughput
   prefetch.rs    phase 3: stride sweep, interleaved streams, run-ahead, boundaries, stores
   sim.rs         software models of one cache set (LRU, tree-PLRU, FIFO, random, SRRIP, BRRIP, NRU, SRRIP-FP)
@@ -361,7 +401,7 @@ src/
 docs/
   methodology.md per-experiment hypothesis, principle, possible biases (French)
   asm/           archived objdump output of the asm kernels
-scripts/        plot.py (phase 1), plot_cache.py (phase 2), plot_prefetch.py (phase 3), plot_branch.py (phase 4) and plot_ooo.py (phase 5) draw the figures from the CSV/JSONL files (matplotlib)
+scripts/        plot.py (phase 1), plot_cache.py (phase 2), plot_prefetch.py (phase 3), plot_branch.py (phase 4), plot_ooo.py (phase 5) and plot_multicore.py (phase 6) draw the figures from the CSV/JSONL files (matplotlib)
 results/<date>/  env.json, CSV curves and raw/*.jsonl produced on the Pi
 PLAN.md          architecture, technical decisions, risks, open questions (French)
 RESULTS.md       every finding: value, method, confidence, source file (French)

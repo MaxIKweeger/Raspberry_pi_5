@@ -495,3 +495,79 @@ requêtes en vol ≈ 9 dans les deux méthodes.
 - Le plateau du test MLP en DRAM peut être limité par le débit des accès aléatoires.
 - `sdiv` : seulement deux jeux d'opérandes ; `stp` : le débit de 3 cycles n'est pas expliqué ; `sdot` et `fmla` : latence mesurée sur la chaîne d'accumulation uniquement.
 - Un seul run complet ; pas de réplication indépendante.
+
+---
+
+# Phase 6 — inter-cœurs et cas particuliers d'accès mémoire
+
+Sources : `results/2026-09-19/multicore_experiments.csv`, `raw/multicore.jsonl`, `phase6_run.log`, `env_phase6.json`. Un run complet (30 répétitions par point
+en 3 tours d'ordre alterné), governor `performance`, **5070 répétitions, 0 invalide**, sans `sudo` (hors governor). Figures : `docs/img/multicore_*.png`
+(`scripts/plot_multicore.py`).
+
+## 6.1 Latence de transfert d'une ligne entre cœurs (ping-pong, 200 000 allers-retours par répétition)
+
+Deux threads épinglés échangent une valeur sur une ligne (boucles en asm) : l'initiateur écrit un impair, le répondeur renvoie le pair suivant ; latence aller simple =
+durée / (2 n). Deux protocoles : `stlr`/`ldar`, et `ldaddal` (atomique LSE) / `ldar`. Le temps `CNTVCT` et les cycles PMU concordent (72,4 ns ↔ 174 cycles à 2,4 GHz).
+
+| Protocole | Paires voisines (0↔1, 1↔2, 2↔3, 3↔0) | Paires opposées (0↔2, 1↔3) | Lecture |
+|---|---|---|---|
+| `stlr` / `ldar` | **68,5–70,6 ns** (165–170 cycles) | **72,0–72,5 ns** (173–174 cycles) | dépendance à la paire de cœurs : **+3 à +4 ns (≈ +4 %)** pour les paires opposées |
+| `ldaddal` / `ldar` | 69,1–69,8 ns (166–167 cycles) | idem | **uniforme**, aucune dépendance à la paire |
+
+La matrice est reproduite sur **4 lignes distinctes** (pages différentes, donc adresses physiques différentes) : les mêmes paires sont les plus lentes pour chacune, donc l'effet est lié
+aux cœurs et non à l'adresse. Les paires voisines sont un peu bruitées (68,5 à 71,7 ns selon les répétitions, IC95 % jusqu'à ±1,5 ns) ; les valeurs des paires opposées sont très stables.
+Un transfert de ligne modifiée entre cœurs coûte donc ≈ **70 ns (≈ 168 cycles)**, soit environ 4,5 fois la latence L3 (15–16 ns) et 70 % de la latence DRAM (98 ns).
+Interprétation : topologie de type anneau ou deux paires de cœurs (hypothèse, non testée) ; l'effet est faible (< 5 %). Mesuré ; confiance haute pour les valeurs, moyenne pour la dépendance à la paire.
+
+## 6.2 Store-to-load forwarding (une chaîne « store puis load dépendant » : la valeur lue alimente le store suivant)
+
+Cycles par paire ; la référence sans chevauchement (1,00) n'est pas une latence (sans dépendance mémoire, la paire est limitée par le débit) et ne sert qu'à montrer que la chaîne mesure bien le chemin mémoire.
+
+| Combinaison | Cycles par paire | Chemin |
+|---|---|---|
+| `str x` / `ldr x` (même adresse) ; `str w` / `ldr w` | **5,50** | forwarding rapide |
+| `str x` / `ldr w` (moitié basse **ou** haute, +4) ; `ldrb` octet 0 | 5,50 | rapide |
+| `str w` / `ldr x` (load plus large que le store) | 5,50 | rapide (surprenant, voir limites) |
+| `str x [p]` / `ldur x [p+4]` (le load chevauche à moitié le store) | 5,50 | rapide (surprenant) |
+| `str x` / `ldur x` désaligné de 4 dans une ligne | 5,50 | rapide |
+| `str w [p]` + `str w [p+4]` / `ldr x [p]` (deux stores, un load) | 5,31 | rapide |
+| `stp x,x` / `ldr x` (l'une ou l'autre moitié) | 6,35 | un peu plus lent |
+| `str q` / `ldr q`, `ldr d` (moitié basse ou haute) ; `str q` / `ldur q` +8 | 6,80 ; 5,61 | rapide |
+| `str d` / `ldr q` (load plus large que le store) | 5,51 | rapide |
+| **`str x` / `ldrb` octet 7 ; `str x` / `ldrh` octets 2–3 ; `strb` / `ldr x`** | **10,5** | **chemin lent** (+5 cycles) |
+| store et load à cheval sur une ligne de 64 o (`x` à +60 ; `q` à +56) | 7,14 ; 8,51 | plus lent |
+| store et load à cheval sur une page de 16 Kio | **14,5–15,8** | le plus lent |
+
+Constat : le forwarding coûte **5,5 cycles** pour la plupart des combinaisons (contre 4 cycles pour une lecture L1 ordinaire) ; les échecs (chemin lent) apparaissent pour des accès
+de tailles ou de positions particulières : octet ou demi-mot pris à l'intérieur d'un mot de 8 o à un décalage non nul (+5 cycles), store d'octet suivi d'un load large (+5), franchissement de ligne (+1,6 à +3) et
+de page (+9 à +10). Un load plus large que le store ne provoque pas d'échec dans ces conditions (`w` → `x`, `d` → `q`), et un load qui chevauche à moitié le store non plus : **résultats
+inattendus, conservés** ; hypothèse : la lecture L1 est fusionnée avec la donnée du store, ce que ce test ne distingue pas d'un forwarding partiel.
+
+## 6.3 Accès non alignés (accès indépendants dans le L1 ; compteurs PMU)
+
+Attention : les 8 pointeurs d'une itération ont le même décalage dans leur ligne, donc frappent la même banque du L1 : tous les cas, alignés compris, sont plafonnés à 1 accès par cycle. Les
+valeurs sont à comparer entre elles, pas au pic (2 loads/cycle mesurés en phase 5).
+
+| Accès | Coût (cycles par accès) | L1D_CACHE / TLB par accès |
+|---|---|---|
+| load 8 o ou 16 o, tout décalage dans la ligne, y compris à cheval sur 2 lignes | **1,00** (1,08 pour quelques décalages qui traversent la ligne) | 1,00 |
+| load à cheval sur une frontière de 4 Kio dans une page de 16 Kio | 1,70 | 1,00 |
+| load à cheval sur une frontière de page de 16 Kio | 1,00 | 1,00 |
+| store 8 o aligné | 1,5 | 1,00 |
+| store 8 o désaligné | 1,0 à 4,0 selon le décalage : 2,08 (1, 7), **3,4 (9, 15)**, 3,6 (31), **4,0 (57, 63)**, 2,0 (28, 60), 1,0 (12) | 1,00 |
+| store 16 o | 1,0 pour la plupart, **3,4 (1, 15)**, 4,0 (49, 63), 2,0 (24, 56, 60) | 1,00 |
+| store à cheval sur une frontière de 4 Kio ou de page de 16 Kio | **11 à 12** | **2,0 à 2,3** |
+
+Les **loads désalignés sont pratiquement gratuits** (le L1 traite un accès à cheval sur deux lignes en un seul accès compté), tandis que les **stores désalignés coûtent 1 à 4 cycles selon le décalage**, et un **store à cheval sur
+une frontière de 4 Kio coûte ≈ 11 cycles et compte deux accès L1D**. Détail conservé sans lissage : le franchissement d'une frontière de 4 Kio coûte 1,7 cycle pour un load mais celui d'une frontière de page de 16 Kio
+(qui est aussi une frontière de 4 Kio) 1,0 : **différence non expliquée** (banque ou set du L1). La première version du test utilisait 8 frontières espacées de 16 Kio, donc dans les mêmes sets du L1 (4 voies) :
+elle mesurait des misses de conflit (8,8–19 cycles selon l'état du cache) et a été remplacée par 2 frontières distinctes.
+
+## Limites de la phase 6
+
+- Un seul cluster de 4 cœurs : la matrice ne dit rien d'une topologie plus large ; les deux « classes » de paires sont une observation, pas une identification de la topologie.
+- Le ping-pong mesure une ligne modifiée qui change de propriétaire ; il ne mesure ni le partage en lecture seule ni la contention à plus de deux cœurs.
+- Les cas de forwarding partiel « rapides » (load plus large que le store, chevauchement à moitié) n'ont pas été départagés par un test de correction de valeur (le test mesure le temps, pas le contenu).
+- Les accès non alignés sont mesurés en débit avec conflit de banque : le pic d'un accès aligné n'est pas atteint ; seules les comparaisons relatives sont valables.
+- Frontières de 4 Kio et de page : seulement deux frontières distinctes par test ; la différence entre les deux n'est pas expliquée.
+- Un seul run complet ; pas de réplication indépendante (la matrice a toutefois été répétée sur 4 lignes).

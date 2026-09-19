@@ -1,6 +1,6 @@
 # PLAN.md — a76probe
 
-Statut : **phases 0 à 5 implémentées et validées sur le Pi (2026-09-19) ; en attente du feu vert pour la phase 6.**
+Statut : **les six phases sont implémentées et validées sur le Pi (2026-09-19).**
 Les chiffres du §1 viennent de commandes en lecture seule exécutées sur le Pi le 2026-09-19 ; les résultats de la phase 0 sont dans `RESULTS.md`.
 
 ### Décisions appliquées par défaut (réponse « ok » sans détail sur les questions du §5)
@@ -27,6 +27,7 @@ Les chiffres du §1 viennent de commandes en lecture seule exécutées sur le Pi
 - Phase 4 : génération de code à l'exécution (`a64.rs` : encodeurs testés ; `jit.rs` : `mmap` RW → écriture → `dc cvau`/`ic ivau`/`dsb`/`isb` (tailles de ligne lues dans `CTR_EL0`) → `mprotect` R+X, jamais W+X), choix justifié dans `docs/methodology.md` ; auto-test fonctionnel du code généré avant toute mesure. Sans `sudo` (hors governor).
 - Phase 5 : `ooo.rs` (fenêtres par remplissage après un miss DRAM, MLP, instructions par `asm!`). Deux pièges de mesure trouvés et corrigés (état du générateur rejoué ; load sans consommateur), documentés dans la méthodologie. Sans `sudo` (hors governor).
 - Le governor `performance` a été réappliqué pour les runs des phases 4 et 5 puis restauré à `ondemand`.
+- Phase 6 : `multicore.rs` (ping-pong `stlr`/`ldar` et `ldaddal` entre threads épinglés, forwarding par chaînes mémoire dépendantes, accès non alignés avec recoupement PMU). Sans `sudo` (hors governor `performance`, restauré). Un piège de mesure corrigé (frontières de page dans les mêmes sets du L1) ; matrice répétée sur 4 lignes distinctes pour écarter une dépendance à l'adresse.
 - Aucune expérience de phase 1 n'utilise de hugepages (absentes) : le reach TLB est établi pour des pages de 16 Kio uniquement.
 
 ## 1. Constats sur la machine (mesurés / lus)
