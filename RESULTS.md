@@ -150,3 +150,98 @@ Points surprenants / non expliqués (aucun lissage) :
   (`policy0`), donc la lecture est représentative. Le cœur 0 porte le bruit système (non isolé).
 - Les cœurs 2, 3, 0 n'ont pas été comparés individuellement en mono-cœur.
 - « GB/s » est décimal (10⁹ o/s) ; le trafic de copie compte lecture + écriture (convention STREAM).
+
+---
+
+# Phase 2 — géométrie et politique de remplacement des caches
+
+Sources : `results/2026-09-19/cache_experiments_run{1,2}.csv`, `raw/cache_run{1,2}.jsonl` (chaque répétition),
+`analysis_replacement_run{1,2}.txt` (score des politiques par `a76probe analyze-cache`), `phase2_run{1,2}.log`
+(sortie de l'acquisition), `env_phase2.json`. **Deux runs complets indépendants** (run 1 puis run 2, 4800 répétitions
+chacun, 30 par point en 3 tours d'ordre alterné, cœur 1, governor `performance`), **0 répétition invalide**.
+Figures : `docs/img/cache_{assoc,index_bits,replacement}.png` (`scripts/plot_cache.py`).
+
+Méthode d'accès aux adresses physiques (décision déléguée) : `/proc/self/pagemap` lu **sous `sudo`** (lecture seule de
+notre propre mapping ; aucun réglage système modifié). Réserve de 2 Gio (131 072 pages de 16 Kio), `mlock` réussi (root),
+PFN relus après le run : **0 page déplacée**. Les 131 072 pages tombent dans les plages `System RAM` de `/proc/iomem`
+(confirme que PFN × 16 Kio est la bonne unité). Étendue physique 0x1e50000–0x1ff9fc000. Groupes de lignes : bits
+physiques 14 à 24 tenus constants (classes de 66–67 pages) ; les bits > 24 ne sont pas contrôlés.
+
+## Taille de ligne
+
+| Constat | Valeur | Statut | Confiance | Source |
+|---|---|---|---|---|
+| Ligne L1D | refills/load = 0,1250 / 0,2500 / 0,5000 / 1,0000 / 1,0000 pour des pas de 8 / 16 / 32 / 64 / 128 o = pas/64 exactement ⇒ **64 o** | mesuré | haute | L1D_CACHE_REFILL |
+| Ligne L2 | rapport au plateau (pas 128) : 0,128 / 0,252 / 0,499 / 0,999 (attendu 0,125 / 0,25 / 0,5 / 1) ⇒ **64 o** | mesuré | haute | L2D_CACHE_REFILL (plateau brut 0,92 : ≈ 8 % des lignes restent dans le L2) |
+| Ligne L3 | non mesurée ; 64 o d'après sysfs et la cohérence des tailles ci-dessous | hypothèse | moyenne | — |
+
+## Associativité, sets, bits d'index (identiques dans les deux runs)
+
+| Niveau | Capacité de conflit (dernière valeur de K sans miss) | Forme de la montée | Bits d'index (inversion d'un bit) | Sets | Taille = voies × sets × 64 o |
+|---|---|---|---|---|---|
+| L1D | **4** (0 miss à K=4, 1,000 à K=5) | marche nette | 6–13 | 256 | 4 × 256 × 64 = **64 Kio** ✓ sysfs |
+| L2 | **8** (0 à K=8, puis 0,25 / 0,50 / 0,75 / 1,00 à K=9…12) | rampe par paliers de 25 % | 6–15 | 1024 | 8 × 1024 × 64 = **512 Kio** ✓ sysfs |
+| L3 | **24** (0,0000 jusqu'à K=24, 0,12 à K=25, ≈ 0,5 vers K=35, bruité) | rampe lente | 6–16 | 2048 | voies L3 = 24 − 8 = **16** ⇒ 16 × 2048 × 64 = **2 Mio** ✓ sysfs |
+
+- Les bits d'index sont **contigus** dans les trois niveaux. Inverser n'importe quel bit de 17 à 24 ne soulage pas le
+  L3 (taux ≈ taux de base 0,53 ; à K = 36 le taux de base a valu 0,78 dans une mesure et 0,53 dans une autre : le taux
+  de miss du L3 en débordement varie d'une mesure à l'autre) ⇒ **aucun hachage impliquant les bits 17–24 n'est observé**
+  (déduit ; bits > 24 non testés). Le bit 16 du L3 laisse un résidu de 0,03 (contre 0,000 pour les autres bits d'index).
+- **L3 de type victime (exclusif du L2) — déduit, confiance moyenne à haute** : la capacité de conflit vaut 24 = 8 (L2) + 16
+  (L3) : un L3 inclusif du L2 donnerait 16. Recoupements : la phase 1 donnait une capacité effective L3 ≈ 1,9 Mio (2 Mio =
+  16 voies × 2048 sets), et la phase 0 avait vu L2D_CACHE_WB ≈ 1 par ligne lue (évictions propres du L2 comptées comme
+  écritures vers le L3).
+- Sensibilité à la définition de la capacité : « premier K avec ≥ 5 % de refills − 1 » (adoptée) donne 4 / 8 / 24 ; « premier
+  K avec ≥ 50 % − 1 » donnerait 4 / 9 / 28–34 (la rampe non-LRU la gonfle) ; c'est la raison du choix.
+
+## Politique de remplacement (W+1 à W+3 lignes dans un set, 8 motifs, comparés à 8 modèles)
+
+Modèles : LRU, tree-PLRU, FIFO, random, SRRIP (2 bits, HP), BRRIP, NRU, SRRIP-FP. Chaque modèle est simulé depuis de
+nombreux états initiaux aléatoires (voies invalides, bits PLRU, RRPV, ordre) ; une répétition est notée par sa distance à
+l'état permanent atteignable le plus proche ; score = distance moyenne (plus bas = mieux). Motifs : cyclique W+1 et W+2,
+dents de scie, aléatoire W+1 et W+3, une ligne chaude + cycle, W−1 lignes chaudes + 2 froides, chaque ligne deux fois.
+
+| Niveau | Run 1 | Run 2 | Conclusion | Confiance |
+|---|---|---|---|---|
+| L1D (W=4) | tree-PLRU 0,0021 ; LRU 0,0171 ; NRU 0,046 | tree-PLRU 0,0041 ; LRU 0,0155 ; NRU 0,045 | **compatible avec tree-PLRU**, LRU strict écarté (« ligne chaude + cycle » : 0,38–0,40 mesuré, 0,375 PLRU, 0,50 LRU) ; écart résiduel ≈ 0,02 sur ce motif (variante de PLRU non modélisée) | moyenne (faible selon la règle de marge au run 2) |
+| L2 (W=8) | tree-PLRU 0,0126 ; LRU 0,0257 ; NRU 0,054 | **NRU 0,0156** ; SRRIP-FP 0,0231 ; tree-PLRU 0,0372 ; LRU 0,0387 | **famille pseudo-LRU, non identifiée** : le meilleur modèle change d'un run à l'autre | faible |
+| L3 | non caractérisée : le flux vu par le L3 est filtré par le L2 ; la montée lente après K=24 indique une politique non-LRU | | — | — |
+
+Ce que les données du L2 établissent : (a) les motifs cyclique W+1/W+2, dents de scie et aléatoires sont identiques
+aux modèles LRU/PLRU/NRU (indiscernables) et **excluent** random, SRRIP, BRRIP ; (b) les motifs avec réutilisation
+prennent **plusieurs états permanents discrets qui changent d'une répétition et d'un run à l'autre** :
+« ligne chaude + cycle » ∈ {0,31 ; 0,38 ; 0,43–0,44 ; 0,50}, « W−1 chaudes + 2 froides » ∈ {0,23 ; 0,29 ; 0,56}
+(0,56 pour 24 répétitions sur 30 au run 1, 0,23 pour 22 sur 30 au run 2). Un tree-PLRU démarré depuis un set partiellement
+invalide reproduit exactement les états 0,315 / 0,375 / 0,44 / 0,50 de « ligne chaude + cycle » (simulation), ce qui
+soutient l'hypothèse « pseudo-LRU dont le régime dépend de la disposition initiale des voies » ; l'état 0,23 n'est
+reproduit par aucun des 8 modèles (NRU donne 0,19).
+
+## Inclusion
+
+| Constat | Valeur | Statut | Confiance |
+|---|---|---|---|
+| L2 ↔ L3 | capacité de conflit 24 = 8 + 16 ⇒ L3 exclusif du L2 (type victime) | déduit | moyenne à haute |
+| L1 ↔ L2 (back-invalidation) | ligne X gardée chaude en L1 pendant que son set L2 est saturé par 8 autres lignes : L2 refills = **0,197 (run 1) / 0,208 (run 2) par accès** contre 0,0001 sans X. Un L2 tree-PLRU **sans** back-invalidation prédit 0,0 ; **avec** back-invalidation, 1,0 (simulation). La mesure n'est ni l'un ni l'autre | **ambigu** | faible |
+
+Hypothèse non testée pour la valeur intermédiaire : remplacement du L2 tenant compte de la présence de la ligne dans
+le L1 (le L2 évite d'évincer les lignes présentes en L1). Le test ne permet pas de conclure sur l'inclusion L1 ⊂ L2.
+
+## Tableau de synthèse {niveau, taille, voies, sets, ligne, politique candidate, confiance}
+
+| Niveau | Taille | Voies | Sets | Ligne | Politique candidate | Confiance |
+|---|---|---|---|---|---|---|
+| L1D | 64 Kio (mesuré : 4 × 256 × 64) | 4 | 256 (bits 6–13) | 64 o | tree-PLRU | moyenne |
+| L2 | 512 Kio (mesuré : 8 × 1024 × 64) | 8 | 1024 (bits 6–15) | 64 o | pseudo-LRU, variante non identifiée | faible |
+| L3 | 2 Mio (déduit : 16 voies × 2048 × 64) | 16 (capacité de conflit 24 avec le L2) | 2048 (bits 6–16) | 64 o (non mesuré) | non caractérisée ; L3 victime | moyenne (géométrie) |
+
+## Limites de la phase 2
+
+- Deux runs seulement ; le comportement du L2 dépend de l'état, donc un troisième run pourrait donner un autre « meilleur modèle ».
+- Huit modèles seulement ; les variantes de PLRU (arbre, bit-PLRU, etc.) et les politiques adaptatives (DRRIP avec set dueling) ne sont pas toutes représentées.
+- Bits physiques > 24 non contrôlés (un hachage sur ces bits ne serait pas détecté) ; le L3 est testé avec 44 lignes par set au plus.
+- La capacité de conflit L3 de 24 mélange L2 et L3 ; la décomposition 8 + 16 s'appuie sur la géométrie sysfs et la phase 1.
+- Le test d'inclusion L1/L2 est ambigu ; il n'existe pas ici de mesure de l'inclusion du L3.
+- Les logs d'acquisition (`phase2_run{1,2}.log`) affichent un score de politique historique (RMS des médianes, puis
+  couverture) ; le score de référence est celui de `analysis_replacement_run{1,2}.txt`.
+- Exécution sous `sudo` (pagemap) : les fichiers de résultats créés par root ont été rendus à l'utilisateur (`chown`) ;
+  aucun autre réglage système n'a été modifié en dehors du governor `performance` (restauré à `ondemand`).

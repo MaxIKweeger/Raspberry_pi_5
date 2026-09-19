@@ -1,6 +1,6 @@
 # PLAN.md — a76probe
 
-Statut : **phases 0 et 1 implémentées et validées sur le Pi (2026-09-19) ; en attente du feu vert pour la phase 2.**
+Statut : **phases 0, 1 et 2 implémentées et validées sur le Pi (2026-09-19) ; en attente du feu vert pour la phase 3.**
 Les chiffres du §1 viennent de commandes en lecture seule exécutées sur le Pi le 2026-09-19 ; les résultats de la phase 0 sont dans `RESULTS.md`.
 
 ### Décisions appliquées par défaut (réponse « ok » sans détail sur les questions du §5)
@@ -14,7 +14,7 @@ Les chiffres du §1 viennent de commandes en lecture seule exécutées sur le Pi
 - Q2 : governor `performance` **appliqué** pour le run de la phase 1 (`sudo`, uniquement l'écriture de `scaling_governor`), puis **restauré à `ondemand`** juste après.
 - Q3 (`perf_user_access=1`) : **refusé pour l'instant** : les boucles de la phase 1 sont longues, le coût de `read()` est amorti ; à reconsidérer si une phase exige des fenêtres < 10 µs (phase 4).
 - Q4 (arrêt de lightdm/wayvnc) : **refusé** : une session graphique peut être utilisée ; le bruit est mesuré (0 répétition invalide) et les mesures sont épinglées sur le cœur 1.
-- Q1 (bits d'adresse physique) : **reporté au début de la phase 2**, où le choix (pagemap sous `sudo`, `/dev/dma_heap`, ou méthode statistique) sera présenté avec la commande exacte et le retour arrière.
+- Q1 (bits d'adresse physique) : **tranché pour la phase 2** : lecture de `/proc/self/pagemap` sous `sudo` (`sudo ./a76probe run --exp cache ...`), lecture seule de notre propre mapping, aucun réglage système modifié ; les fichiers créés par root ont été rendus à l'utilisateur (`sudo chown -R hugues:hugues ~/a76probe/results`). Le governor `performance` a de nouveau été utilisé pendant les runs, puis restauré à `ondemand`.
 - Licence : Apache-2.0 (demande de l'utilisateur).
 
 ### Écarts par rapport au plan initial
@@ -22,6 +22,7 @@ Les chiffres du §1 viennent de commandes en lecture seule exécutées sur le Pi
 - Le chrono par défaut est décidé d'après les mesures (voir `docs/methodology.md`) : CNTVCT pour les régions ≥ ~10 µs, compteur de cycles PMU (via `read()`, ≈ 396 ns) pour les régions ≥ ~100 µs.
 - Le groupe PMU maximal sans multiplexage est de 7 événements (dont `cpu_cycles`), à respecter dans les phases suivantes.
 - Phase 1 : sous-commande `run --all|--exp latency|tlb|bandwidth`, `Session`/`reps_raw` (tours d'ordre alterné), noyaux asm `chase`, `bw_read/bw_write/bw_copy`, `perm.rs`, `scripts/plot.py`.
+- Phase 2 : `phys.rs`, `lineset.rs`, `sim.rs`, `analysis.rs`, `cache_geom.rs`, noyaux `trace_replay`/`trace_replay_evict` ; sous-commande `analyze-cache` ; `Session::start` écrit `env_<label>.json`. Deux runs complets indépendants (le comportement du L2 dépend de l'état).
 - Aucune expérience de phase 1 n'utilise de hugepages (absentes) : le reach TLB est établi pour des pages de 16 Kio uniquement.
 
 ## 1. Constats sur la machine (mesurés / lus)

@@ -1,7 +1,7 @@
 # Méthodologie
 
 Ce document décrit, par expérience : l'hypothèse, le principe, les biais possibles et les références.
-Il est complété à chaque phase. État actuel : phases 0 et 1.
+Il est complété à chaque phase. État actuel : phases 0, 1 et 2.
 
 ## Règles transverses (appliquées par `harness.rs`)
 
@@ -110,3 +110,45 @@ thermique) apparaîtrait comme une différence entre tours (tags `round` dans le
   (cycles, refills, BUS_ACCESS).
 - **Biais** : démarrage non simultané au µs près ; création des threads hors zone chronométrée ; le cœur 0
   porte le bruit système ; « copie » compte lecture + écriture.
+
+## Phase 2 — géométrie et politique de remplacement (`sudo a76probe run --exp cache`, puis `analyze-cache`)
+
+Prérequis : lecture de `/proc/self/pagemap` avec PFN réels (root). La réserve de 2 Gio est verrouillée (`mlock`) ; les PFN
+sont relus à la fin (0 page déplacée exigé) et vérifiés contre les plages `System RAM` de `/proc/iomem`.
+Les lignes cibles sont à l'offset de page 12288 (set L1 192), loin de la zone de trace (offsets 0–8191).
+
+### E2.1 Taille de ligne
+- **Principe** : chaînes dont les éléments sont espacés de 8 à 128 o, lignes visitées dans un ordre aléatoire, éléments
+  croissants à l'intérieur d'une ligne ; refills par load = pas / taille de ligne tant que pas < ligne. Normalisé par le
+  plateau du pas 128 pour le L2 (une fraction du jeu reste dans le L2).
+- **Biais** : les accès ascendants intra-ligne pourraient déclencher un préchargement ; l'ordre aléatoire des lignes l'évite.
+
+### E2.2 Associativité
+- **Principe** : K lignes de mêmes bits physiques 6–24 (donc même set à tous les niveaux), chaîne aléatoire à cycle unique ;
+  refills du niveau testé par load en fonction de K. Capacité de conflit = (premier K avec ≥ 5 % de refills) − 1.
+- **Biais** : une politique non-LRU (PLRU, NRU, aléatoire) produit des rampes, d'où le choix du seuil à 5 % plutôt qu'à 50 %.
+  À L3 les lignes d'un même set L3 occupent aussi un même set L2 : la capacité mesurée est L2 + L3 si le L3 est exclusif.
+
+### E2.3 Bits d'index
+- **Principe** : avec K = 1,5 × capacité lignes (débordement), inverser un seul bit physique b dans une ligne sur deux ;
+  si b sélectionne le set, chaque moitié tient (taux ≈ 0), sinon le débordement persiste. Bits 6–13 : offset dans la page ;
+  bits 14–24 : pages de classes de clé différente d'un seul bit.
+- **Biais** : un hachage par XOR de bits > 24 échapperait au test ; un bit d'index haché avec d'autres est tout de même détecté.
+  Seuil : bit d'index si taux < 50 % du taux de base ; les bits d'index donnent 0,00–0,03, les autres ≈ le taux de base.
+
+### E2.4 Politique de remplacement
+- **Principe** : W+1 à W+3 lignes d'un même set, 8 motifs rejoués sur 4096 accès × 16 passes ; accès rendus dépendants
+  (le zéro lu est ajouté au pointeur de trace) pour que le cache voie l'ordre du programme. Au L2, 24 accès d'éviction à
+  des lignes de même set L1 mais d'autres sets L2 (couleurs de pages différentes) chassent la cible du L1 après chaque accès.
+  Taux de miss = refills du niveau / accès cible. Témoin : W lignes cycliques (0,0002–0,0006 attendu).
+- **Modèles et notation** : voir `src/sim.rs` et `src/analysis.rs`. Départ aléatoire des modèles (la moitié des voies invalides,
+  bits d'état aléatoires) car les politiques pseudo-LRU ont plusieurs cycles limites selon l'état initial ; un modèle « atteint »
+  un état s'il l'atteint depuis ≥ 1 % des départs ; score = distance moyenne au plus proche état atteignable.
+- **Biais** : les tests passent par la hiérarchie : au L2, le flux vu est filtré par le L1 (évité par les évictions) ; les
+  accès d'éviction ajoutent du trafic dans d'autres sets. La confiance est plafonnée à « moyenne » (8 modèles seulement).
+
+### E2.5 Inclusion L1/L2
+- **Principe** : X gardée chaude en L1 (touchée un accès sur deux) pendant que W lignes du même set L2 tournent ; X n'atteint
+  jamais le L2. Sans back-invalidation le L2 finit par évincer la copie périmée de X puis les W lignes tiennent (0 miss) ;
+  avec back-invalidation X sort du L1 à chaque éviction (1 miss par accès).
+- **Biais** : voir les résultats : la valeur intermédiaire (≈ 0,2) empêche de conclure.

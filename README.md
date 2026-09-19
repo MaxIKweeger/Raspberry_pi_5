@@ -11,9 +11,10 @@ confidence level and is labelled **measured**, **deduced** or **hypothesis**. Re
 contradict the spec or our expectations are documented, not smoothed away — negative and ambiguous
 results are results.
 
-> **Status: Phases 0 (foundations) and 1 (memory hierarchy) are complete.** The measurement chain is
-> validated on real hardware and the first experiments have produced curves for cache/DRAM latency,
-> TLB reach and NEON bandwidth. Phases 2–6 are not written yet; see the [roadmap](#roadmap).
+> **Status: Phases 0 (foundations), 1 (memory hierarchy) and 2 (cache geometry and replacement) are
+> complete.** The measurement chain is validated on real hardware; curves for cache/DRAM latency, TLB reach,
+> NEON bandwidth, and measured cache geometry (ways, sets, index bits) are available. Phases 3–6 are not
+> written yet; see the [roadmap](#roadmap).
 
 ## Why this is harder than it looks
 
@@ -113,13 +114,58 @@ decreases as cores are added**; single-core writes stay at 16 B/cycle up to 1 Mi
 fit in L2 collapse (hypothesis: they go through a shared level); reading a 16 KiB set is 27 % faster than
 a 32 KiB set for reasons not yet explained. See [`RESULTS.md`](RESULTS.md).
 
+## Phase 2 results: cache geometry and replacement policy
+
+Two independent full runs (4800 repetitions each, 30 per point, 0 flagged invalid). Physical addresses come from
+`/proc/self/pagemap` read as root (read-only, own mapping; the pool is `mlock`ed and no page moved during the runs).
+Lines are chosen so that chosen physical address bits are equal (same set) or differ in exactly one bit (index-bit test).
+Raw data: [`raw/cache_run1.jsonl`](results/2026-09-19/raw/cache_run1.jsonl),
+[`raw/cache_run2.jsonl`](results/2026-09-19/raw/cache_run2.jsonl); tables:
+[`cache_experiments_run2.csv`](results/2026-09-19/cache_experiments_run2.csv).
+
+![Associativity](docs/img/cache_assoc.png)
+
+![Set-index bits](docs/img/cache_index_bits.png)
+
+| Level | Size | Ways | Sets | Line | Replacement candidate | Confidence |
+|---|---|---|---|---|---|---|
+| L1D | 64 KiB (measured: 4 × 256 × 64 B) | **4** (sharp: 0 misses at 4 lines, 100 % at 5) | **256**, index = physical bits 6–13 | **64 B** | **tree-PLRU** (strict LRU ruled out) | medium |
+| L2 | 512 KiB (measured: 8 × 1024 × 64 B) | **8** (ramp 25/50/75/100 % at 9–12 lines) | **1024**, index = bits 6–15 | **64 B** | pseudo-LRU family, variant **not identified** | low |
+| L3 | 2 MiB (deduced: 16 ways × 2048 × 64 B) | conflict capacity **24 = 8 (L2) + 16 (L3)** | **2048**, index = bits 6–16 | 64 B (assumed) | not characterised | medium (geometry) |
+
+- The set-index bits are **contiguous** at every level, and flipping any of the bits 17–24 does not relieve the L3,
+  so no hash involving those bits is observed. sysfs geometry is confirmed by measurement for L1D and L2.
+- A conflict capacity of **24 = 8 + 16** at the L3 means the L3 does **not** duplicate what the L2 holds: it behaves
+  as a **victim (exclusive) cache**. An inclusive L3 would give 16. This agrees with Phase 1 (effective L3 capacity
+  ≈ 1.9 MiB) and with the Phase 0 write-back counter observation.
+
+![Replacement signatures](docs/img/cache_replacement.png)
+
+Replacement is identified by replaying eight access patterns over W+1…W+3 lines of one set, and comparing the measured
+steady-state miss rates with eight software models (LRU, tree-PLRU, FIFO, random, SRRIP, BRRIP, NRU, SRRIP-FP), each
+started from many random initial states.
+
+- **L1D**: cyclic, sawtooth, random and reuse patterns all match tree-PLRU; the "one hot line + cycle" pattern gives
+  0.38–0.40 misses per access against 0.375 for tree-PLRU and 0.50 for LRU. Mean distance to the model: PLRU 0.002–0.004,
+  LRU 0.016–0.017.
+- **L2**: patterns without reuse match the LRU/PLRU/NRU family and rule out random and RRIP models, but patterns with
+  reuse settle into **several discrete steady states that change between repetitions and between runs**
+  (e.g. "one hot line + cycle": 0.31, 0.38, 0.44 or 0.50; "hot set + 2 cold": 0.56 in 24/30 repetitions of run 1,
+  0.23 in 22/30 of run 2). The best model differs by run (tree-PLRU, then NRU). A tree-PLRU started from a partly
+  invalid set reproduces exactly the 0.315 / 0.375 / 0.44 / 0.50 states in simulation (hypothesis: a pseudo-LRU whose
+  limit cycle depends on the initial way layout); the 0.23 state is reproduced by no model.
+- **L1/L2 inclusion**: the test is **ambiguous** (0.20–0.21 L2 refills per access; a PLRU L2 without back-invalidation
+  predicts 0, with back-invalidation 1).
+
+`a76probe analyze-cache --raw <file>` re-scores the replacement signatures from the raw data without touching hardware.
+
 ## Roadmap
 
 | Phase | Topic | Status |
 |---|---|---|
 | 0 | Foundations: env snapshot, timing sources, PMU wrapper, stats, guard, JSONL output, self-test | **done** |
 | 1 | Memory hierarchy: pointer-chasing latency, TLB reach, NEON bandwidth (1–4 cores) | **done** |
-| 2 | Cache geometry and replacement policy (compared with software LRU/PLRU/FIFO/random/SRRIP models) | planned |
+| 2 | Cache geometry and replacement policy (compared with software LRU/PLRU/FIFO/random/SRRIP/NRU models) | **done** |
 | 3 | Hardware prefetchers: stride range, streams, distance, page-boundary behaviour | planned |
 | 4 | Branch predictors via runtime-generated code: BTB, history length, indirect, return stack, penalty | planned |
 | 5 | Out-of-order core: ROB / load queue / store buffer / register files, MLP, instruction latency and throughput | planned |
@@ -161,6 +207,7 @@ export A76_PI_HOST=<pi address> A76_PI_PASS=<password>   # A76_PI_USER defaults 
 ./deploy.sh env                                  # environment snapshot (JSON)
 ./deploy.sh selftest --core 1 --repeat 30        # validate the measurement chain
 ./deploy.sh run --all --core 1 --repeat 30       # phase 1 experiments (about 25 minutes)
+# phase 2 needs root for /proc/self/pagemap: run it on the Pi with sudo (see below)
 ```
 
 On the Pi directly:
@@ -169,13 +216,15 @@ On the Pi directly:
 ./a76probe env [--out env.json]      # kernel, page size, caches, MIDR, governor, temperature, PMU, ...
 ./a76probe selftest --core 1 --repeat 30 --out-dir results
 ./a76probe run --all --core 1 --repeat 30            # or --exp latency | tlb | bandwidth
+sudo ./a76probe run --exp cache --core 1 --repeat 30   # phase 2 (about 12 minutes; root only for pagemap)
+./a76probe analyze-cache --raw results/<date>/raw/cache.jsonl   # re-score replacement policies offline
 ./a76probe pmu-list                  # PMU events exposed by the kernel
 ```
 
 `selftest` writes `results/<date>/env.json` and `results/<date>/raw/selftest.jsonl` (one JSON line
 per repetition and per summary) and prints a summary table.
 
-No `sudo` is required to run the tool: performance counters are opened with `exclude_kernel` on the
+No `sudo` is required for phases 0 and 1: performance counters are opened with `exclude_kernel` on the
 tool's own process, which the default `perf_event_paranoid=2` allows. For steadier frequency during the
 long sweeps, the phase 1 data was taken with the `performance` governor
 (`echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor`; revert with `ondemand`);
@@ -185,7 +234,7 @@ under `ondemand` the CPU also stayed at 2.4 GHz during busy runs, and the freque
 
 ```
 src/
-  main.rs        CLI (clap): env | selftest | run | pmu-list
+  main.rs        CLI (clap): env | selftest | run | analyze-cache | pmu-list
   env.rs         environment snapshot (sysfs, MIDR, cpufreq, PMU, hugepages, ...); MAC addresses redacted
   timing.rs      CNTVCT_EL0 / CNTFRQ_EL0 access
   pmu.rs         perf_event_open wrapper: event discovery from sysfs, groups, exclude_kernel
@@ -200,10 +249,15 @@ src/
   mem_lat.rs     phase 1: pointer-chasing latency and TLB experiments
   mem_bw.rs      phase 1: NEON read/write/copy bandwidth, 1-4 cores
   perm.rs        single-cycle (Sattolo) permutations
+  phys.rs        pagemap reader (physical addresses of our own pages, root only)
+  lineset.rs     selection of lines with prescribed physical-address bits
+  cache_geom.rs  phase 2: line size, associativity, index bits, replacement, inclusion
+  sim.rs         software models of one cache set (LRU, tree-PLRU, FIFO, random, SRRIP, BRRIP, NRU, SRRIP-FP)
+  analysis.rs    offline scoring of measured replacement signatures against the models
 docs/
   methodology.md per-experiment hypothesis, principle, possible biases (French)
   asm/           archived objdump output of the asm kernels
-scripts/plot.py  draws the phase 1 figures from the CSV files (matplotlib)
+scripts/        plot.py (phase 1) and plot_cache.py (phase 2) draw the figures from the CSV/JSONL files (matplotlib)
 results/<date>/  env.json, CSV curves and raw/*.jsonl produced on the Pi
 PLAN.md          architecture, technical decisions, risks, open questions (French)
 RESULTS.md       every finding: value, method, confidence, source file (French)
