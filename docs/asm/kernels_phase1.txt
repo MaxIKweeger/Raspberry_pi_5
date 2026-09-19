@@ -1,0 +1,66 @@
+
+### chase  (_ZN8a76probe7kernels5chase17h157fdb2e76c8b3cdE)
+0000000000268200 <_ZN8a76probe7kernels5chase17h157fdb2e76c8b3cdE>:
+  268200:	lsr	x8, x1, #4
+  268204:	ldr	x0, [x0]
+  268208:	ldr	x0, [x0]
+  26820c:	ldr	x0, [x0]
+  268210:	ldr	x0, [x0]
+  268214:	ldr	x0, [x0]
+  268218:	ldr	x0, [x0]
+  26821c:	ldr	x0, [x0]
+  268220:	ldr	x0, [x0]
+  268224:	ldr	x0, [x0]
+  268228:	ldr	x0, [x0]
+  26822c:	ldr	x0, [x0]
+  268230:	ldr	x0, [x0]
+  268234:	ldr	x0, [x0]
+  268238:	ldr	x0, [x0]
+  26823c:	ldr	x0, [x0]
+  268240:	ldr	x0, [x0]
+  268244:	subs	x8, x8, #0x1
+  268248:	b.ne	268204 <_ZN8a76probe7kernels5chase17h157fdb2e76c8b3cdE+0x4>  // b.any
+  26824c:	ret
+
+### bw_read  (_ZN8a76probe7kernels7bw_read17hbfa8f61415f8cb4bE)
+000000000024c320 <_ZN8a76probe7kernels7bw_read17hbfa8f61415f8cb4bE>:
+  24c320:	lsr	x8, x1, #7
+  24c324:	ldp	q0, q1, [x0]
+  24c328:	ldp	q2, q3, [x0, #32]
+  24c32c:	ldp	q4, q5, [x0, #64]
+  24c330:	ldp	q6, q7, [x0, #96]
+  24c334:	add	x0, x0, #0x80
+  24c338:	subs	x8, x8, #0x1
+  24c33c:	b.ne	24c324 <_ZN8a76probe7kernels7bw_read17hbfa8f61415f8cb4bE+0x4>  // b.any
+  24c340:	ret
+
+### bw_write  (_ZN8a76probe7kernels8bw_write17h493e68fcca1856a7E)
+000000000024c350 <_ZN8a76probe7kernels8bw_write17h493e68fcca1856a7E>:
+  24c350:	lsr	x8, x1, #7
+  24c354:	movi	v0.16b, #0x5a
+  24c358:	movi	v1.16b, #0x5a
+  24c35c:	stp	q0, q1, [x0]
+  24c360:	stp	q0, q1, [x0, #32]
+  24c364:	stp	q0, q1, [x0, #64]
+  24c368:	stp	q0, q1, [x0, #96]
+  24c36c:	add	x0, x0, #0x80
+  24c370:	subs	x8, x8, #0x1
+  24c374:	b.ne	24c35c <_ZN8a76probe7kernels8bw_write17h493e68fcca1856a7E+0xc>  // b.any
+  24c378:	ret
+
+### bw_copy  (_ZN8a76probe7kernels7bw_copy17hd7b547b0c2b757c7E)
+000000000024c380 <_ZN8a76probe7kernels7bw_copy17hd7b547b0c2b757c7E>:
+  24c380:	lsr	x8, x2, #7
+  24c384:	ldp	q0, q1, [x0]
+  24c388:	ldp	q2, q3, [x0, #32]
+  24c38c:	ldp	q4, q5, [x0, #64]
+  24c390:	ldp	q6, q7, [x0, #96]
+  24c394:	stp	q0, q1, [x1]
+  24c398:	stp	q2, q3, [x1, #32]
+  24c39c:	stp	q4, q5, [x1, #64]
+  24c3a0:	stp	q6, q7, [x1, #96]
+  24c3a4:	add	x0, x0, #0x80
+  24c3a8:	add	x1, x1, #0x80
+  24c3ac:	subs	x8, x8, #0x1
+  24c3b0:	b.ne	24c384 <_ZN8a76probe7kernels7bw_copy17hd7b547b0c2b757c7E+0x4>  // b.any
+  24c3b4:	ret
