@@ -36,6 +36,8 @@ pub mod branch;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 pub mod ooo;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+pub mod multicore;
+#[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 pub mod selftest;
 #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
 pub mod timing;
