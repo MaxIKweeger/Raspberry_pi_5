@@ -1,0 +1,42 @@
+
+== L1D, W = 4
+  L1D: per-repetition steady states (0.01 bins) of each pattern:
+    cyclic W+1           [1.00x30]
+    cyclic W+2           [1.00x30]
+    sawtooth W+1         [0.25x30]
+    random W+1           [0.21x30]
+    random W+3           [0.42x30]
+    hot line + cycle     [0.38x28 0.39x1 0.50x1]
+    hot set + 2 cold     [0.62x30]
+    each line twice      [0.50x30]
+  mean distance to the nearest state reachable by each model (lower is better; coverage = share of reps within 0.012):
+    tree-PLRU distance 0.0021  coverage 1.00  worst pattern: hot set + 2 cold (0.006)
+    LRU       distance 0.0171  coverage 0.88  worst pattern: hot line + cycle (0.114)
+    NRU       distance 0.0460  coverage 0.75  worst pattern: hot set + 2 cold (0.244)
+    SRRIP-FP  distance 0.0623  coverage 0.75  worst pattern: hot set + 2 cold (0.374)
+    SRRIP     distance 0.0750  coverage 0.62  worst pattern: hot set + 2 cold (0.374)
+    FIFO      distance 0.0812  coverage 0.62  worst pattern: sawtooth W+1 (0.380)
+    BRRIP     distance 0.1716  coverage 0.50  worst pattern: cyclic W+1 (0.598)
+    random    distance 0.2181  coverage 0.25  worst pattern: cyclic W+1 (0.598)
+  -> closest: tree-PLRU (confidence medium)
+
+== L2, W = 8
+  L2: per-repetition steady states (0.01 bins) of each pattern:
+    cyclic W+1           [1.00x30]
+    cyclic W+2           [1.00x30]
+    sawtooth W+1         [0.13x30]
+    random W+1           [0.10x30]
+    random W+3           [0.27x30]
+    hot line + cycle     [0.31x7 0.38x3 0.43x3 0.44x17]
+    hot set + 2 cold     [0.23x5 0.29x1 0.56x24]
+    each line twice      [0.17x1 0.44x1 0.48x2 0.49x1 0.50x25]
+  mean distance to the nearest state reachable by each model (lower is better; coverage = share of reps within 0.012):
+    tree-PLRU distance 0.0126  coverage 0.96  worst pattern: hot set + 2 cold (0.067)
+    LRU       distance 0.0257  coverage 0.83  worst pattern: hot line + cycle (0.098)
+    NRU       distance 0.0540  coverage 0.73  worst pattern: hot set + 2 cold (0.307)
+    SRRIP-FP  distance 0.0615  coverage 0.73  worst pattern: hot set + 2 cold (0.367)
+    FIFO      distance 0.0870  coverage 0.71  worst pattern: sawtooth W+1 (0.435)
+    SRRIP     distance 0.1398  coverage 0.61  worst pattern: cyclic W+2 (0.599)
+    BRRIP     distance 0.2539  coverage 0.50  worst pattern: cyclic W+1 (0.780)
+    random    distance 0.2968  coverage 0.25  worst pattern: cyclic W+1 (0.780)
+  -> closest: tree-PLRU (confidence low)

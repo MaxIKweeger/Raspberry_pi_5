@@ -1,0 +1,288 @@
+kind,level_or_case,x,value,a,b,c
+linesize,L1D,8,0.12500,0.12500,0.12500
+linesize,L1D,16,0.25000,0.25000,0.25000
+linesize,L1D,32,0.50000,0.50000,0.50000
+linesize,L1D,64,1.00000,1.00000,1.00000
+linesize,L1D,128,1.00000,1.00000,1.00000
+linesize,L2,8,0.11365,0.12500,0.12847
+linesize,L2,16,0.22301,0.25000,0.25210
+linesize,L2,32,0.44402,0.50000,0.50192
+linesize,L2,64,0.88286,1.00000,0.99799
+linesize,L2,128,0.88464,1.00000,1.00000
+assoc,L1D,1,0.00000,0.00000,0.00000,4.000
+assoc,L1D,2,0.00000,0.00000,0.00000,4.000
+assoc,L1D,3,0.00000,0.00000,0.00000,4.000
+assoc,L1D,4,0.00000,0.00000,0.00000,4.000
+assoc,L1D,5,1.00000,0.99999,1.00000,14.000
+assoc,L1D,6,1.00000,1.00000,1.00000,14.000
+assoc,L1D,7,1.00000,1.00000,1.00000,14.000
+assoc,L1D,8,1.00000,1.00000,1.00000,14.000
+assoc,L1D,9,1.00000,1.00000,1.00000,25.574
+assoc,L1D,10,1.00000,1.00000,1.00000,36.074
+flip,L1D,6,0.00001,1.00000,1
+flip,L1D,7,0.00000,1.00000,1
+flip,L1D,8,0.00000,1.00000,1
+flip,L1D,9,0.00000,1.00000,1
+flip,L1D,10,0.00001,1.00000,1
+flip,L1D,11,0.00001,1.00000,1
+flip,L1D,12,0.00001,1.00000,1
+flip,L1D,13,0.00001,1.00000,1
+flip,L1D,14,1.00000,1.00000,0
+flip,L1D,15,1.00000,1.00000,0
+flip,L1D,16,1.00000,1.00000,0
+flip,L1D,17,1.00000,1.00000,0
+flip,L1D,18,1.00000,1.00000,0
+flip,L1D,19,1.00000,1.00000,0
+flip,L1D,20,1.00000,1.00000,0
+flip,L1D,21,1.00000,1.00000,0
+flip,L1D,22,1.00000,1.00000,0
+flip,L1D,23,1.00000,1.00000,0
+flip,L1D,24,1.00000,1.00000,0
+assoc,L2,1,0.00000,0.00000,0.00000,4.000
+assoc,L2,2,0.00000,0.00000,0.00000,4.000
+assoc,L2,3,0.00000,0.00000,0.00000,4.000
+assoc,L2,4,0.00000,0.00000,0.00000,4.000
+assoc,L2,5,0.00000,0.00000,0.00000,14.000
+assoc,L2,6,0.00000,0.00000,0.00001,14.000
+assoc,L2,7,0.00001,0.00001,0.00001,14.000
+assoc,L2,8,0.00001,0.00001,0.00001,14.000
+assoc,L2,9,0.25001,0.25001,0.25001,25.575
+assoc,L2,10,0.50000,0.50000,0.57465,36.094
+assoc,L2,11,0.75000,0.75000,0.75335,45.460
+assoc,L2,12,0.99999,0.99999,1.00000,55.076
+assoc,L2,13,1.00000,1.00000,1.00000,45.654
+assoc,L2,14,1.00000,1.00000,1.00000,38.730
+assoc,L2,15,1.00000,1.00000,1.00000,38.731
+assoc,L2,16,1.00000,1.00000,1.00000,38.666
+flip,L2,6,0.00001,0.99999,1
+flip,L2,7,0.00001,0.99999,1
+flip,L2,8,0.00000,0.99999,1
+flip,L2,9,0.00000,0.99999,1
+flip,L2,10,0.00001,0.99999,1
+flip,L2,11,0.00001,0.99999,1
+flip,L2,12,0.00001,0.99999,1
+flip,L2,13,0.00001,0.99999,1
+flip,L2,14,0.00000,0.99999,1
+flip,L2,15,0.00001,0.99999,1
+flip,L2,16,0.99999,0.99999,0
+flip,L2,17,0.99999,0.99999,0
+flip,L2,18,0.99999,0.99999,0
+flip,L2,19,0.99999,0.99999,0
+flip,L2,20,0.99999,0.99999,0
+flip,L2,21,0.99999,0.99999,0
+flip,L2,22,0.99999,0.99999,0
+flip,L2,23,0.99999,0.99999,0
+flip,L2,24,0.99999,0.99999,0
+assoc,L3,1,0.00000,0.00000,0.00000,4.000
+assoc,L3,2,0.00000,0.00000,0.00000,4.000
+assoc,L3,3,0.00000,0.00000,0.00000,4.000
+assoc,L3,4,0.00000,0.00000,0.00000,4.000
+assoc,L3,5,0.00000,0.00000,0.00000,14.000
+assoc,L3,6,0.00000,0.00000,0.00000,14.001
+assoc,L3,7,0.00000,0.00000,0.00000,14.001
+assoc,L3,8,0.00000,0.00000,0.00000,14.001
+assoc,L3,9,0.00000,0.00000,0.00000,25.574
+assoc,L3,10,0.00000,0.00000,0.00000,36.083
+assoc,L3,11,0.00000,0.00000,0.00000,45.459
+assoc,L3,12,0.00000,0.00000,0.00000,55.092
+assoc,L3,13,0.00000,0.00000,0.00000,45.876
+assoc,L3,14,0.00000,0.00000,0.00000,38.706
+assoc,L3,15,0.00000,0.00000,0.00000,38.741
+assoc,L3,16,0.00000,0.00000,0.00000,38.666
+assoc,L3,17,0.00000,0.00000,0.00000,38.764
+assoc,L3,18,0.00000,0.00000,0.00000,38.686
+assoc,L3,19,0.00000,0.00000,0.00000,38.694
+assoc,L3,20,0.00000,0.00000,0.00000,38.670
+assoc,L3,21,0.00001,0.00001,0.00006,38.675
+assoc,L3,22,0.00001,0.00001,0.00001,38.714
+assoc,L3,23,0.00127,0.00003,0.00950,38.680
+assoc,L3,24,0.00013,0.00002,0.00017,38.685
+assoc,L3,25,0.14832,0.11732,0.17302,68.645
+assoc,L3,26,0.23581,0.22360,0.24552,89.848
+assoc,L3,27,0.36775,0.36588,0.36963,112.770
+assoc,L3,28,0.29197,0.28756,0.32510,101.782
+assoc,L3,29,0.52023,0.51913,0.52242,144.523
+assoc,L3,30,0.52172,0.50360,0.53463,152.786
+assoc,L3,31,0.62014,0.61762,0.62279,165.604
+assoc,L3,32,0.60282,0.59542,0.62818,168.614
+assoc,L3,33,0.78277,0.77927,0.78625,197.830
+assoc,L3,34,0.81783,0.81490,0.82337,215.132
+assoc,L3,35,0.85182,0.84294,0.86047,212.687
+assoc,L3,36,0.77942,0.77062,0.79831,206.104
+assoc,L3,37,0.92435,0.92166,0.92779,227.032
+assoc,L3,38,0.87779,0.87641,0.87923,227.001
+assoc,L3,39,0.94430,0.94223,0.94719,231.127
+assoc,L3,40,0.88981,0.88707,0.89428,229.700
+assoc,L3,41,0.98774,0.98169,0.99623,239.180
+assoc,L3,42,0.99659,0.98676,1.00068,250.142
+assoc,L3,43,1.04984,1.04765,1.05342,252.318
+assoc,L3,44,0.95585,0.94769,0.97220,243.639
+flip,L3,6,0.00000,0.53057,1
+flip,L3,7,0.00000,0.53057,1
+flip,L3,8,0.00001,0.53057,1
+flip,L3,9,0.00000,0.53057,1
+flip,L3,10,0.00000,0.53057,1
+flip,L3,11,0.00000,0.53057,1
+flip,L3,12,0.00000,0.53057,1
+flip,L3,13,0.00001,0.53057,1
+flip,L3,14,0.00000,0.53057,1
+flip,L3,15,0.00000,0.53057,1
+flip,L3,16,0.02778,0.53057,1
+flip,L3,17,0.54216,0.53057,0
+flip,L3,18,0.54342,0.53057,0
+flip,L3,19,0.58661,0.53057,0
+flip,L3,20,0.53235,0.53057,0
+flip,L3,21,0.54325,0.53057,0
+flip,L3,22,0.52722,0.53057,0
+flip,L3,23,0.53216,0.53057,0
+flip,L3,24,0.55121,0.53057,0
+repl_header,L1D,pattern,measured,ci_lo,ci_hi,LRU,tree-PLRU,FIFO,random,SRRIP,BRRIP,NRU,SRRIP-FP
+repl,L1D,cyclic W+1,0.99883,0.99865,0.99884,0.99976,0.99976,0.99976,0.39987,0.79980,0.39990,0.99976,0.99902
+repl,L1D,cyclic W+2,0.99966,0.99966,0.99968,0.99902,0.99902,0.99902,0.61531,0.99902,0.49981,0.99902,0.99902
+repl,L1D,sawtooth W+1,0.25016,0.25015,0.25018,0.25000,0.25000,0.62500,0.33335,0.25000,0.25000,0.25000,0.25000
+repl,L1D,random W+1,0.20576,0.20576,0.20576,0.19800,0.20630,0.19287,0.19816,0.19434,0.19546,0.20020,0.19873
+repl,L1D,random W+3,0.42175,0.42174,0.42175,0.42578,0.42114,0.42456,0.42712,0.42847,0.42788,0.42383,0.42432
+repl,L1D,hot line + cycle,0.39784,0.39784,0.39786,0.50000,0.37500,0.62500,0.29415,0.50000,0.25000,0.50000,0.50000
+repl,L1D,hot set + 2 cold,0.62398,0.62397,0.62398,0.62500,0.62500,0.62500,0.32704,0.25000,0.25000,0.37500,0.25000
+repl,L1D,each line twice,0.49943,0.49942,0.49944,0.49927,0.49927,0.49927,0.19999,0.49878,0.49878,0.49878,0.49878
+repl,L1D,control: 4 lines cyclic (fits),0.00052,0.00049,0.00055,,,,,,,,
+repl_cov,L1D,cyclic W+1,LRU,1.0000
+repl_cov,L1D,cyclic W+1,tree-PLRU,1.0000
+repl_cov,L1D,cyclic W+1,FIFO,1.0000
+repl_cov,L1D,cyclic W+1,random,0.0000
+repl_cov,L1D,cyclic W+1,SRRIP,0.0000
+repl_cov,L1D,cyclic W+1,BRRIP,0.0000
+repl_cov,L1D,cyclic W+1,NRU,1.0000
+repl_cov,L1D,cyclic W+1,SRRIP-FP,1.0000
+repl_cov,L1D,cyclic W+2,LRU,1.0000
+repl_cov,L1D,cyclic W+2,tree-PLRU,1.0000
+repl_cov,L1D,cyclic W+2,FIFO,1.0000
+repl_cov,L1D,cyclic W+2,random,0.0000
+repl_cov,L1D,cyclic W+2,SRRIP,1.0000
+repl_cov,L1D,cyclic W+2,BRRIP,0.0000
+repl_cov,L1D,cyclic W+2,NRU,1.0000
+repl_cov,L1D,cyclic W+2,SRRIP-FP,1.0000
+repl_cov,L1D,sawtooth W+1,LRU,1.0000
+repl_cov,L1D,sawtooth W+1,tree-PLRU,1.0000
+repl_cov,L1D,sawtooth W+1,FIFO,0.0000
+repl_cov,L1D,sawtooth W+1,random,0.0000
+repl_cov,L1D,sawtooth W+1,SRRIP,1.0000
+repl_cov,L1D,sawtooth W+1,BRRIP,1.0000
+repl_cov,L1D,sawtooth W+1,NRU,1.0000
+repl_cov,L1D,sawtooth W+1,SRRIP-FP,1.0000
+repl_cov,L1D,random W+1,LRU,1.0000
+repl_cov,L1D,random W+1,tree-PLRU,1.0000
+repl_cov,L1D,random W+1,FIFO,0.0000
+repl_cov,L1D,random W+1,random,1.0000
+repl_cov,L1D,random W+1,SRRIP,0.0000
+repl_cov,L1D,random W+1,BRRIP,1.0000
+repl_cov,L1D,random W+1,NRU,1.0000
+repl_cov,L1D,random W+1,SRRIP-FP,1.0000
+repl_cov,L1D,random W+3,LRU,1.0000
+repl_cov,L1D,random W+3,tree-PLRU,1.0000
+repl_cov,L1D,random W+3,FIFO,1.0000
+repl_cov,L1D,random W+3,random,1.0000
+repl_cov,L1D,random W+3,SRRIP,1.0000
+repl_cov,L1D,random W+3,BRRIP,1.0000
+repl_cov,L1D,random W+3,NRU,1.0000
+repl_cov,L1D,random W+3,SRRIP-FP,1.0000
+repl_cov,L1D,hot line + cycle,LRU,0.0000
+repl_cov,L1D,hot line + cycle,tree-PLRU,0.0000
+repl_cov,L1D,hot line + cycle,FIFO,0.0000
+repl_cov,L1D,hot line + cycle,random,0.0000
+repl_cov,L1D,hot line + cycle,SRRIP,0.0000
+repl_cov,L1D,hot line + cycle,BRRIP,0.0000
+repl_cov,L1D,hot line + cycle,NRU,0.0000
+repl_cov,L1D,hot line + cycle,SRRIP-FP,0.0000
+repl_cov,L1D,hot set + 2 cold,LRU,1.0000
+repl_cov,L1D,hot set + 2 cold,tree-PLRU,1.0000
+repl_cov,L1D,hot set + 2 cold,FIFO,1.0000
+repl_cov,L1D,hot set + 2 cold,random,0.0000
+repl_cov,L1D,hot set + 2 cold,SRRIP,0.0000
+repl_cov,L1D,hot set + 2 cold,BRRIP,0.0000
+repl_cov,L1D,hot set + 2 cold,NRU,0.0000
+repl_cov,L1D,hot set + 2 cold,SRRIP-FP,0.0000
+repl_cov,L1D,each line twice,LRU,1.0000
+repl_cov,L1D,each line twice,tree-PLRU,1.0000
+repl_cov,L1D,each line twice,FIFO,1.0000
+repl_cov,L1D,each line twice,random,0.0000
+repl_cov,L1D,each line twice,SRRIP,1.0000
+repl_cov,L1D,each line twice,BRRIP,1.0000
+repl_cov,L1D,each line twice,NRU,1.0000
+repl_cov,L1D,each line twice,SRRIP-FP,1.0000
+repl_header,L2,pattern,measured,ci_lo,ci_hi,LRU,tree-PLRU,FIFO,random,SRRIP,BRRIP,NRU,SRRIP-FP
+repl,L2,cyclic W+1,0.99985,0.99983,0.99987,0.99976,0.99976,0.99976,0.22238,0.88867,0.22217,0.99976,0.99805
+repl,L2,cyclic W+2,0.99869,0.99867,0.99870,0.99854,0.99854,0.99854,0.38388,0.39941,0.29986,0.99756,0.99707
+repl,L2,sawtooth W+1,0.12520,0.12517,0.12524,0.12500,0.12500,0.56250,0.17648,0.12500,0.12500,0.12500,0.12500
+repl,L2,random W+1,0.10297,0.10294,0.10300,0.10767,0.10522,0.10767,0.10955,0.10596,0.11013,0.10400,0.10400
+repl,L2,random W+3,0.27100,0.27099,0.27103,0.26392,0.26880,0.26489,0.27086,0.26318,0.27113,0.27002,0.26733
+repl,L2,hot line + cycle,0.50009,0.50008,0.50012,0.50000,0.31250,0.56250,0.13866,0.50000,0.12500,0.50000,0.50000
+repl,L2,hot set + 2 cold,0.22519,0.22518,0.22523,0.56250,0.56250,0.56250,0.19840,0.12500,0.12500,0.18750,0.12500
+repl,L2,each line twice,0.49889,0.49886,0.49892,0.49878,0.49878,0.49878,0.11107,0.49731,0.49731,0.49731,0.49731
+repl,L2,control: 8 lines cyclic (fits),0.00021,0.00020,0.00023,,,,,,,,
+repl_cov,L2,cyclic W+1,LRU,0.9333
+repl_cov,L2,cyclic W+1,tree-PLRU,0.9333
+repl_cov,L2,cyclic W+1,FIFO,0.9333
+repl_cov,L2,cyclic W+1,random,0.0000
+repl_cov,L2,cyclic W+1,SRRIP,0.0000
+repl_cov,L2,cyclic W+1,BRRIP,0.0000
+repl_cov,L2,cyclic W+1,NRU,0.9333
+repl_cov,L2,cyclic W+1,SRRIP-FP,0.9333
+repl_cov,L2,cyclic W+2,LRU,1.0000
+repl_cov,L2,cyclic W+2,tree-PLRU,1.0000
+repl_cov,L2,cyclic W+2,FIFO,1.0000
+repl_cov,L2,cyclic W+2,random,0.0000
+repl_cov,L2,cyclic W+2,SRRIP,0.0000
+repl_cov,L2,cyclic W+2,BRRIP,0.0000
+repl_cov,L2,cyclic W+2,NRU,1.0000
+repl_cov,L2,cyclic W+2,SRRIP-FP,1.0000
+repl_cov,L2,sawtooth W+1,LRU,1.0000
+repl_cov,L2,sawtooth W+1,tree-PLRU,1.0000
+repl_cov,L2,sawtooth W+1,FIFO,0.0000
+repl_cov,L2,sawtooth W+1,random,0.0000
+repl_cov,L2,sawtooth W+1,SRRIP,1.0000
+repl_cov,L2,sawtooth W+1,BRRIP,1.0000
+repl_cov,L2,sawtooth W+1,NRU,1.0000
+repl_cov,L2,sawtooth W+1,SRRIP-FP,1.0000
+repl_cov,L2,random W+1,LRU,1.0000
+repl_cov,L2,random W+1,tree-PLRU,1.0000
+repl_cov,L2,random W+1,FIFO,1.0000
+repl_cov,L2,random W+1,random,1.0000
+repl_cov,L2,random W+1,SRRIP,1.0000
+repl_cov,L2,random W+1,BRRIP,1.0000
+repl_cov,L2,random W+1,NRU,1.0000
+repl_cov,L2,random W+1,SRRIP-FP,1.0000
+repl_cov,L2,random W+3,LRU,1.0000
+repl_cov,L2,random W+3,tree-PLRU,1.0000
+repl_cov,L2,random W+3,FIFO,1.0000
+repl_cov,L2,random W+3,random,1.0000
+repl_cov,L2,random W+3,SRRIP,1.0000
+repl_cov,L2,random W+3,BRRIP,1.0000
+repl_cov,L2,random W+3,NRU,1.0000
+repl_cov,L2,random W+3,SRRIP-FP,1.0000
+repl_cov,L2,hot line + cycle,LRU,0.9667
+repl_cov,L2,hot line + cycle,tree-PLRU,1.0000
+repl_cov,L2,hot line + cycle,FIFO,0.0000
+repl_cov,L2,hot line + cycle,random,0.0000
+repl_cov,L2,hot line + cycle,SRRIP,1.0000
+repl_cov,L2,hot line + cycle,BRRIP,0.0000
+repl_cov,L2,hot line + cycle,NRU,0.9667
+repl_cov,L2,hot line + cycle,SRRIP-FP,0.9667
+repl_cov,L2,hot set + 2 cold,LRU,0.1667
+repl_cov,L2,hot set + 2 cold,tree-PLRU,0.1667
+repl_cov,L2,hot set + 2 cold,FIFO,0.1667
+repl_cov,L2,hot set + 2 cold,random,0.0000
+repl_cov,L2,hot set + 2 cold,SRRIP,0.0000
+repl_cov,L2,hot set + 2 cold,BRRIP,0.8000
+repl_cov,L2,hot set + 2 cold,NRU,0.0000
+repl_cov,L2,hot set + 2 cold,SRRIP-FP,0.0000
+repl_cov,L2,each line twice,LRU,0.8667
+repl_cov,L2,each line twice,tree-PLRU,0.8667
+repl_cov,L2,each line twice,FIFO,0.8667
+repl_cov,L2,each line twice,random,0.0000
+repl_cov,L2,each line twice,SRRIP,0.8667
+repl_cov,L2,each line twice,BRRIP,0.8667
+repl_cov,L2,each line twice,NRU,0.8667
+repl_cov,L2,each line twice,SRRIP-FP,0.8667
+inclusion,hot line X + W thrash lines (X never reaches L2 while hot),0.44184,0.20779
+inclusion,control: the W thrash lines only,0.99831,0.00014

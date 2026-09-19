@@ -1,0 +1,222 @@
+core 1, expected freq 2400000 kHz, CNTFRQ 54000000 Hz, 30 reps
+allocating and mapping a 2048 MiB pool (mlock as root, PFNs from pagemap)...
+pool: 131072 pages, physical span 0x1be4000..0x1ff9fc000, locked: true, System RAM ranges: [(80000, 3fbfffff), (40000000, 7fffffff), (80000000, bfffffff), (c0000000, ffffffff), (100000000, 13fffffff), (140000000, 17fffffff), (180000000, 1bfffffff), (1c0000000, 1ffffffff)]
+
+== line size: refills per load on strided chains (line order random, elements ascending inside a line)
+  L1D stride   8 B: 0.1250 refills/load, 0.1250 of the stride-128 plateau (line = 64 B predicts 0.1250)
+  L1D stride  16 B: 0.2500 refills/load, 0.2500 of the stride-128 plateau (line = 64 B predicts 0.2500)
+  L1D stride  32 B: 0.5000 refills/load, 0.5000 of the stride-128 plateau (line = 64 B predicts 0.5000)
+  L1D stride  64 B: 1.0000 refills/load, 1.0000 of the stride-128 plateau (line = 64 B predicts 1.0000)
+  L1D stride 128 B: 1.0000 refills/load, 1.0000 of the stride-128 plateau (line = 64 B predicts 1.0000)
+  L2  stride   8 B: 0.1136 refills/load, 0.1285 of the stride-128 plateau (line = 64 B predicts 0.1250)
+  L2  stride  16 B: 0.2230 refills/load, 0.2521 of the stride-128 plateau (line = 64 B predicts 0.2500)
+  L2  stride  32 B: 0.4440 refills/load, 0.5019 of the stride-128 plateau (line = 64 B predicts 0.5000)
+  L2  stride  64 B: 0.8829 refills/load, 0.9980 of the stride-128 plateau (line = 64 B predicts 1.0000)
+  L2  stride 128 B: 0.8846 refills/load, 1.0000 of the stride-128 plateau (line = 64 B predicts 1.0000)
+
+constrained physical bits 14..=24 of every line group (bits above are uncontrolled), class of 66 pages
+
+== associativity L1D: L1D refills per load vs K lines in one set
+  K= 1  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 2  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 3  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 4  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 5  1.0000  [1.0000, 1.0000]  14.0 cycles/load
+  K= 6  1.0000  [1.0000, 1.0000]  14.0 cycles/load
+  K= 7  1.0000  [1.0000, 1.0000]  14.0 cycles/load
+  K= 8  1.0000  [1.0000, 1.0000]  14.0 cycles/load
+  K= 9  1.0000  [1.0000, 1.0000]  25.6 cycles/load
+  K=10  1.0000  [1.0000, 1.0000]  36.1 cycles/load
+  conflict capacity = onset - 1 = Some(4) lines (first K with >= 5 % refills: Some(5); first K with >= 50 %: Some(5))
+
+== index bits L1D: K = 6 lines (W* = 4); baseline (all bits equal) 1.000 refills/load
+  flip bit  6: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  7: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  8: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  9: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 10: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 11: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 12: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 13: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 14: 1.0000  
+  flip bit 15: 1.0000  
+  flip bit 16: 1.0000  
+  flip bit 17: 1.0000  
+  flip bit 18: 1.0000  
+  flip bit 19: 1.0000  
+  flip bit 20: 1.0000  
+  flip bit 21: 1.0000  
+  flip bit 22: 1.0000  
+  flip bit 23: 1.0000  
+  flip bit 24: 1.0000  
+  => L1D: ways*(conflict capacity) = Some(4), onset K = Some(5), index bits [6, 7, 8, 9, 10, 11, 12, 13] (256 sets, contiguous)
+
+== associativity L2: L2D refills per load vs K lines in one set
+  K= 1  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 2  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 3  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 4  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 5  0.0000  [0.0000, 0.0000]  14.0 cycles/load
+  K= 6  0.0000  [0.0000, 0.0000]  14.0 cycles/load
+  K= 7  0.0000  [0.0000, 0.0000]  14.0 cycles/load
+  K= 8  0.0000  [0.0000, 0.0000]  14.0 cycles/load
+  K= 9  0.2500  [0.2500, 0.2500]  25.6 cycles/load
+  K=10  0.5000  [0.5000, 0.5747]  36.1 cycles/load
+  K=11  0.7500  [0.7500, 0.7534]  45.5 cycles/load
+  K=12  1.0000  [1.0000, 1.0000]  55.1 cycles/load
+  K=13  1.0000  [1.0000, 1.0000]  45.7 cycles/load
+  K=14  1.0000  [1.0000, 1.0000]  38.7 cycles/load
+  K=15  1.0000  [1.0000, 1.0000]  38.7 cycles/load
+  K=16  1.0000  [1.0000, 1.0000]  38.7 cycles/load
+  conflict capacity = onset - 1 = Some(8) lines (first K with >= 5 % refills: Some(9); first K with >= 50 %: Some(10))
+
+== index bits L2: K = 12 lines (W* = 8); baseline (all bits equal) 1.000 refills/load
+  flip bit  6: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  7: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  8: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  9: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 10: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 11: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 12: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 13: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 14: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 15: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 16: 1.0000  
+  flip bit 17: 1.0000  
+  flip bit 18: 1.0000  
+  flip bit 19: 1.0000  
+  flip bit 20: 1.0000  
+  flip bit 21: 1.0000  
+  flip bit 22: 1.0000  
+  flip bit 23: 1.0000  
+  flip bit 24: 1.0000  
+  => L2: ways*(conflict capacity) = Some(8), onset K = Some(9), index bits [6, 7, 8, 9, 10, 11, 12, 13, 14, 15] (1024 sets, contiguous)
+
+== associativity L3: L3D refills per load vs K lines in one set
+  K= 1  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 2  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 3  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 4  0.0000  [0.0000, 0.0000]  4.0 cycles/load
+  K= 5  0.0000  [0.0000, 0.0000]  14.0 cycles/load
+  K= 6  0.0000  [0.0000, 0.0000]  14.0 cycles/load
+  K= 7  0.0000  [0.0000, 0.0000]  14.0 cycles/load
+  K= 8  0.0000  [0.0000, 0.0000]  14.0 cycles/load
+  K= 9  0.0000  [0.0000, 0.0000]  25.6 cycles/load
+  K=10  0.0000  [0.0000, 0.0000]  36.1 cycles/load
+  K=11  0.0000  [0.0000, 0.0000]  45.5 cycles/load
+  K=12  0.0000  [0.0000, 0.0000]  55.1 cycles/load
+  K=13  0.0000  [0.0000, 0.0000]  45.9 cycles/load
+  K=14  0.0000  [0.0000, 0.0000]  38.7 cycles/load
+  K=15  0.0000  [0.0000, 0.0000]  38.7 cycles/load
+  K=16  0.0000  [0.0000, 0.0000]  38.7 cycles/load
+  K=17  0.0000  [0.0000, 0.0000]  38.8 cycles/load
+  K=18  0.0000  [0.0000, 0.0000]  38.7 cycles/load
+  K=19  0.0000  [0.0000, 0.0000]  38.7 cycles/load
+  K=20  0.0000  [0.0000, 0.0000]  38.7 cycles/load
+  K=21  0.0000  [0.0000, 0.0001]  38.7 cycles/load
+  K=22  0.0000  [0.0000, 0.0000]  38.7 cycles/load
+  K=23  0.0013  [0.0000, 0.0095]  38.7 cycles/load
+  K=24  0.0001  [0.0000, 0.0002]  38.7 cycles/load
+  K=25  0.1483  [0.1173, 0.1730]  68.6 cycles/load
+  K=26  0.2358  [0.2236, 0.2455]  89.8 cycles/load
+  K=27  0.3678  [0.3659, 0.3696]  112.8 cycles/load
+  K=28  0.2920  [0.2876, 0.3251]  101.8 cycles/load
+  K=29  0.5202  [0.5191, 0.5224]  144.5 cycles/load
+  K=30  0.5217  [0.5036, 0.5346]  152.8 cycles/load
+  K=31  0.6201  [0.6176, 0.6228]  165.6 cycles/load
+  K=32  0.6028  [0.5954, 0.6282]  168.6 cycles/load
+  K=33  0.7828  [0.7793, 0.7862]  197.8 cycles/load
+  K=34  0.8178  [0.8149, 0.8234]  215.1 cycles/load
+  K=35  0.8518  [0.8429, 0.8605]  212.7 cycles/load
+  K=36  0.7794  [0.7706, 0.7983]  206.1 cycles/load
+  K=37  0.9243  [0.9217, 0.9278]  227.0 cycles/load
+  K=38  0.8778  [0.8764, 0.8792]  227.0 cycles/load
+  K=39  0.9443  [0.9422, 0.9472]  231.1 cycles/load
+  K=40  0.8898  [0.8871, 0.8943]  229.7 cycles/load
+  K=41  0.9877  [0.9817, 0.9962]  239.2 cycles/load
+  K=42  0.9966  [0.9868, 1.0007]  250.1 cycles/load
+  K=43  1.0498  [1.0476, 1.0534]  252.3 cycles/load
+  K=44  0.9558  [0.9477, 0.9722]  243.6 cycles/load
+  conflict capacity = onset - 1 = Some(24) lines (first K with >= 5 % refills: Some(25); first K with >= 50 %: Some(29))
+
+== index bits L3: K = 36 lines (W* = 24); baseline (all bits equal) 0.531 refills/load
+  flip bit  6: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  7: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  8: 0.0000  <- set-index bit (overflow disappears)
+  flip bit  9: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 10: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 11: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 12: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 13: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 14: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 15: 0.0000  <- set-index bit (overflow disappears)
+  flip bit 16: 0.0278  <- set-index bit (overflow disappears)
+  flip bit 17: 0.5422  
+  flip bit 18: 0.5434  
+  flip bit 19: 0.5866  
+  flip bit 20: 0.5324  
+  flip bit 21: 0.5433  
+  flip bit 22: 0.5272  
+  flip bit 23: 0.5322  
+  flip bit 24: 0.5512  
+  => L3: ways*(conflict capacity) = Some(24), onset K = Some(25), index bits [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] (2048 sets, contiguous)
+
+== replacement L1D: W = 4, evictors false, refill rate per access at this level
+  cyclic W+1                         measured 0.9988  LRU 1.000  tree-PLRU 1.000  FIFO 1.000  random 0.400  SRRIP 0.800  BRRIP 0.400  NRU 1.000  SRRIP-FP 0.999  
+  cyclic W+2                         measured 0.9997  LRU 0.999  tree-PLRU 0.999  FIFO 0.999  random 0.615  SRRIP 0.999  BRRIP 0.500  NRU 0.999  SRRIP-FP 0.999  
+  sawtooth W+1                       measured 0.2502  LRU 0.250  tree-PLRU 0.250  FIFO 0.625  random 0.333  SRRIP 0.250  BRRIP 0.250  NRU 0.250  SRRIP-FP 0.250  
+  random W+1                         measured 0.2058  LRU 0.198  tree-PLRU 0.206  FIFO 0.193  random 0.198  SRRIP 0.194  BRRIP 0.195  NRU 0.200  SRRIP-FP 0.199  
+  random W+3                         measured 0.4218  LRU 0.426  tree-PLRU 0.421  FIFO 0.425  random 0.427  SRRIP 0.428  BRRIP 0.428  NRU 0.424  SRRIP-FP 0.424  
+  hot line + cycle                   measured 0.3978  LRU 0.500  tree-PLRU 0.375  FIFO 0.625  random 0.294  SRRIP 0.500  BRRIP 0.250  NRU 0.500  SRRIP-FP 0.500  
+  hot set + 2 cold                   measured 0.6240  LRU 0.625  tree-PLRU 0.625  FIFO 0.625  random 0.327  SRRIP 0.250  BRRIP 0.250  NRU 0.375  SRRIP-FP 0.250  
+  each line twice                    measured 0.4994  LRU 0.499  tree-PLRU 0.499  FIFO 0.499  random 0.200  SRRIP 0.499  BRRIP 0.499  NRU 0.499  SRRIP-FP 0.499  
+  control: 4 lines cyclic (fits)     measured 0.0005  
+  per-repetition steady states (0.01 bins) and coverage by each model:
+    cyclic W+1           [1.00x30]  LRU 1.00  tree-PLRU 1.00  FIFO 1.00  random 0.00  SRRIP 0.00  BRRIP 0.00  NRU 1.00  SRRIP-FP 1.00  
+    cyclic W+2           [1.00x30]  LRU 1.00  tree-PLRU 1.00  FIFO 1.00  random 0.00  SRRIP 1.00  BRRIP 0.00  NRU 1.00  SRRIP-FP 1.00  
+    sawtooth W+1         [0.25x30]  LRU 1.00  tree-PLRU 1.00  FIFO 0.00  random 0.00  SRRIP 1.00  BRRIP 1.00  NRU 1.00  SRRIP-FP 1.00  
+    random W+1           [0.21x30]  LRU 1.00  tree-PLRU 1.00  FIFO 0.00  random 1.00  SRRIP 0.00  BRRIP 1.00  NRU 1.00  SRRIP-FP 1.00  
+    random W+3           [0.42x30]  LRU 1.00  tree-PLRU 1.00  FIFO 1.00  random 1.00  SRRIP 1.00  BRRIP 1.00  NRU 1.00  SRRIP-FP 1.00  
+    hot line + cycle     [0.40x29 0.41x1]  LRU 0.00  tree-PLRU 0.00  FIFO 0.00  random 0.00  SRRIP 0.00  BRRIP 0.00  NRU 0.00  SRRIP-FP 0.00  
+    hot set + 2 cold     [0.62x30]  LRU 1.00  tree-PLRU 1.00  FIFO 1.00  random 0.00  SRRIP 0.00  BRRIP 0.00  NRU 0.00  SRRIP-FP 0.00  
+    each line twice      [0.50x30]  LRU 1.00  tree-PLRU 1.00  FIFO 1.00  random 0.00  SRRIP 1.00  BRRIP 1.00  NRU 1.00  SRRIP-FP 1.00  
+  coverage score (mean over patterns, higher is better):  LRU 0.88 (RMS of medians 0.036)  tree-PLRU 0.88 (RMS of medians 0.008)  NRU 0.75 (RMS of medians 0.095)  SRRIP-FP 0.75 (RMS of medians 0.137)  FIFO 0.62 (RMS of medians 0.155)  SRRIP 0.50 (RMS of medians 0.154)  BRRIP 0.50 (RMS of medians 0.310)  random 0.25 (RMS of medians 0.296)
+  -> closest: LRU (confidence low)
+  control (fits in the set): 0.0005 refills/access
+
+== replacement L2: W = 8, evictors true, refill rate per access at this level
+  cyclic W+1                         measured 0.9998  LRU 1.000  tree-PLRU 1.000  FIFO 1.000  random 0.222  SRRIP 0.889  BRRIP 0.222  NRU 1.000  SRRIP-FP 0.998  
+  cyclic W+2                         measured 0.9987  LRU 0.999  tree-PLRU 0.999  FIFO 0.999  random 0.384  SRRIP 0.399  BRRIP 0.300  NRU 0.998  SRRIP-FP 0.997  
+  sawtooth W+1                       measured 0.1252  LRU 0.125  tree-PLRU 0.125  FIFO 0.562  random 0.176  SRRIP 0.125  BRRIP 0.125  NRU 0.125  SRRIP-FP 0.125  
+  random W+1                         measured 0.1030  LRU 0.108  tree-PLRU 0.105  FIFO 0.108  random 0.110  SRRIP 0.106  BRRIP 0.110  NRU 0.104  SRRIP-FP 0.104  
+  random W+3                         measured 0.2710  LRU 0.264  tree-PLRU 0.269  FIFO 0.265  random 0.271  SRRIP 0.263  BRRIP 0.271  NRU 0.270  SRRIP-FP 0.267  
+  hot line + cycle                   measured 0.5001  LRU 0.500  tree-PLRU 0.312  FIFO 0.562  random 0.139  SRRIP 0.500  BRRIP 0.125  NRU 0.500  SRRIP-FP 0.500  
+  hot set + 2 cold                   measured 0.2252  LRU 0.562  tree-PLRU 0.562  FIFO 0.562  random 0.198  SRRIP 0.125  BRRIP 0.125  NRU 0.188  SRRIP-FP 0.125  
+  each line twice                    measured 0.4989  LRU 0.499  tree-PLRU 0.499  FIFO 0.499  random 0.111  SRRIP 0.497  BRRIP 0.497  NRU 0.497  SRRIP-FP 0.497  
+  control: 8 lines cyclic (fits)     measured 0.0002  
+  per-repetition steady states (0.01 bins) and coverage by each model:
+    cyclic W+1           [0.93x1 0.95x1 1.00x28]  LRU 0.93  tree-PLRU 0.93  FIFO 0.93  random 0.00  SRRIP 0.00  BRRIP 0.00  NRU 0.93  SRRIP-FP 0.93  
+    cyclic W+2           [1.00x30]  LRU 1.00  tree-PLRU 1.00  FIFO 1.00  random 0.00  SRRIP 0.00  BRRIP 0.00  NRU 1.00  SRRIP-FP 1.00  
+    sawtooth W+1         [0.13x30]  LRU 1.00  tree-PLRU 1.00  FIFO 0.00  random 0.00  SRRIP 1.00  BRRIP 1.00  NRU 1.00  SRRIP-FP 1.00  
+    random W+1           [0.10x30]  LRU 1.00  tree-PLRU 1.00  FIFO 1.00  random 1.00  SRRIP 1.00  BRRIP 1.00  NRU 1.00  SRRIP-FP 1.00  
+    random W+3           [0.27x30]  LRU 1.00  tree-PLRU 1.00  FIFO 1.00  random 1.00  SRRIP 1.00  BRRIP 1.00  NRU 1.00  SRRIP-FP 1.00  
+    hot line + cycle     [0.44x1 0.50x29]  LRU 0.97  tree-PLRU 1.00  FIFO 0.00  random 0.00  SRRIP 1.00  BRRIP 0.00  NRU 0.97  SRRIP-FP 0.97  
+    hot set + 2 cold     [0.23x22 0.25x1 0.26x1 0.43x1 0.56x5]  LRU 0.17  tree-PLRU 0.17  FIFO 0.17  random 0.00  SRRIP 0.00  BRRIP 0.80  NRU 0.00  SRRIP-FP 0.00  
+    each line twice      [0.43x3 0.48x1 0.50x26]  LRU 0.87  tree-PLRU 0.87  FIFO 0.87  random 0.00  SRRIP 0.87  BRRIP 0.87  NRU 0.87  SRRIP-FP 0.87  
+  coverage score (mean over patterns, higher is better):  tree-PLRU 0.87 (RMS of medians 0.136)  LRU 0.87 (RMS of medians 0.119)  NRU 0.85 (RMS of medians 0.013)  SRRIP-FP 0.85 (RMS of medians 0.035)  FIFO 0.62 (RMS of medians 0.197)  SRRIP 0.61 (RMS of medians 0.218)  BRRIP 0.58 (RMS of medians 0.394)  random 0.25 (RMS of medians 0.398)
+  -> closest: tree-PLRU (confidence low)
+  control (fits in the set): 0.0002 refills/access
+
+== L1/L2 inclusion (L2 set thrashed with W = 8 lines while line X stays hot in L1)
+  hot line X + W thrash lines (X never reaches L2 while hot): L1 refills 0.4418, L2 refills 0.2078 per access
+  control: the W thrash lines only: L1 refills 0.9983, L2 refills 0.0001 per access
+  -> intermediate: neither clean signature
+
+pages whose physical address changed during the run: 0
+
+== summary
+  L1D: conflict capacity Some(4) (sysfs ways 4), 256 sets from index bits [6, 7, 8, 9, 10, 11, 12, 13], => 64 KiB (64 KiB in sysfs); policy: compatible with LRU [low]
+  L2: conflict capacity Some(8) (sysfs ways 8), 1024 sets from index bits [6, 7, 8, 9, 10, 11, 12, 13, 14, 15], => 512 KiB (512 KiB in sysfs); policy: compatible with tree-PLRU [low]
+  L3: conflict capacity Some(24) (sysfs ways 16), 2048 sets from index bits [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], => 3072 KiB (2048 KiB in sysfs); policy: n/a [n/a]
+  L1/L2 inclusion: intermediate: neither clean signature
+cache: 4800 reps, 0 flagged invalid; data in results/2026-09-19

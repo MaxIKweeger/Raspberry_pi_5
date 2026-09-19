@@ -1,0 +1,4 @@
+level,sysfs_size_bytes,sysfs_ways,measured_conflict_capacity,measured_index_bits,sets_from_bits,line_bytes,size_from_bits_bytes,policy_candidate,policy_confidence
+L1D,65536,4,4,"[6, 7, 8, 9, 10, 11, 12, 13]",256,64,65536,compatible with tree-PLRU,medium
+L2,524288,8,8,"[6, 7, 8, 9, 10, 11, 12, 13, 14, 15]",1024,64,524288,compatible with LRU,low
+L3,2097152,16,24,"[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]",2048,64,3145728,n/a,n/a
