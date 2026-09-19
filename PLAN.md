@@ -1,19 +1,28 @@
 # PLAN.md — a76probe
 
-Statut : **phase 0 implémentée et validée sur le Pi (2026-09-19) ; en attente du feu vert pour la phase 1.**
+Statut : **phases 0 et 1 implémentées et validées sur le Pi (2026-09-19) ; en attente du feu vert pour la phase 2.**
 Les chiffres du §1 viennent de commandes en lecture seule exécutées sur le Pi le 2026-09-19 ; les résultats de la phase 0 sont dans `RESULTS.md`.
 
 ### Décisions appliquées par défaut (réponse « ok » sans détail sur les questions du §5)
 - Q5 : pas de clé SSH installée ; mot de passe passé par variable d'environnement (`deploy.sh`, jamais écrit dans le dépôt).
 - Q6 : dépôt git initialisé ; le dépôt est **public** : https://github.com/MaxIKweeger/Raspberry_pi_5 (demande de l'utilisateur).
 - Q7 : `perf` non installé. Q8 : cible `aarch64-unknown-linux-musl` statique (validée).
-- Q1–Q4 (sudo : pagemap, governor `performance`, `perf_user_access=1`, arrêt de lightdm) : **toujours ouvertes, aucun `sudo` utilisé.** Inutiles pour la phase 0 ; Q1 et Q2 deviennent utiles dès la phase 1/2.
+- Q1–Q4 (sudo) : aucune commande `sudo` n'a été utilisée pour la phase 0 ; leur traitement ultérieur est décrit ci-dessous.
 - Publication : `env.json` masque les adresses MAC de la ligne de commande noyau ; l'adresse IP et le mot de passe ne sont pas dans le dépôt.
+
+### Décisions déléguées par l'utilisateur (« je te laisse la primeur des décisions »), 2026-09-19
+- Q2 : governor `performance` **appliqué** pour le run de la phase 1 (`sudo`, uniquement l'écriture de `scaling_governor`), puis **restauré à `ondemand`** juste après.
+- Q3 (`perf_user_access=1`) : **refusé pour l'instant** : les boucles de la phase 1 sont longues, le coût de `read()` est amorti ; à reconsidérer si une phase exige des fenêtres < 10 µs (phase 4).
+- Q4 (arrêt de lightdm/wayvnc) : **refusé** : une session graphique peut être utilisée ; le bruit est mesuré (0 répétition invalide) et les mesures sont épinglées sur le cœur 1.
+- Q1 (bits d'adresse physique) : **reporté au début de la phase 2**, où le choix (pagemap sous `sudo`, `/dev/dma_heap`, ou méthode statistique) sera présenté avec la commande exacte et le retour arrière.
+- Licence : Apache-2.0 (demande de l'utilisateur).
 
 ### Écarts par rapport au plan initial
 - Aucune nouvelle dépendance ; `harness.rs` (répétitions gardées + résumés) ajouté ; sous-commande `pmu-list` ajoutée.
 - Le chrono par défaut est décidé d'après les mesures (voir `docs/methodology.md`) : CNTVCT pour les régions ≥ ~10 µs, compteur de cycles PMU (via `read()`, ≈ 396 ns) pour les régions ≥ ~100 µs.
 - Le groupe PMU maximal sans multiplexage est de 7 événements (dont `cpu_cycles`), à respecter dans les phases suivantes.
+- Phase 1 : sous-commande `run --all|--exp latency|tlb|bandwidth`, `Session`/`reps_raw` (tours d'ordre alterné), noyaux asm `chase`, `bw_read/bw_write/bw_copy`, `perm.rs`, `scripts/plot.py`.
+- Aucune expérience de phase 1 n'utilise de hugepages (absentes) : le reach TLB est établi pour des pages de 16 Kio uniquement.
 
 ## 1. Constats sur la machine (mesurés / lus)
 

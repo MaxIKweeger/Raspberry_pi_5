@@ -1,7 +1,7 @@
 # Méthodologie
 
 Ce document décrit, par expérience : l'hypothèse, le principe, les biais possibles et les références.
-Il est complété à chaque phase. État actuel : phase 0.
+Il est complété à chaque phase. État actuel : phases 0 et 1.
 
 ## Règles transverses (appliquées par `harness.rs`)
 
@@ -16,8 +16,8 @@ Il est complété à chaque phase. État actuel : phase 0.
   portent que sur les répétitions valides ; les invalides restent dans le JSONL avec leurs raisons.
 - Les « attentes » affichées (`expected(code)`) sont dérivées du code de la charge de travail
   (nombre de `ldr`, de branches, d'instructions), jamais de la documentation ni de la mémoire.
-- Alternance des conditions (ordre) : non encore nécessaire en phase 0 (une seule condition par
-  expérience) ; sera appliquée dès qu'une expérience compare plusieurs conditions.
+- Alternance des conditions (ordre) : appliquée dès la phase 1 (tours croissant / décroissant / croissant,
+  ordre des opérations et des conditions tourné d'un tour à l'autre).
 
 ## Phase 0 — chaîne de mesure (`a76probe selftest`)
 
@@ -72,3 +72,41 @@ Il est complété à chaque phase. État actuel : phase 0.
 Pour les mesures très courtes, la méthode est d'amortir : boucles de milliers d'itérations, jamais de
 chronométrage d'une opération isolée. `perf_user_access=1` (lecture directe en user) est en attente
 d'autorisation (voir `PLAN.md`, Q3).
+
+## Phase 1 — hiérarchie mémoire (`a76probe run --exp latency|tlb|bandwidth`)
+
+Ordre des conditions : chaque expérience est jouée en 3 tours (croissant, décroissant, croissant) de
+`ceil(repeat/3)` répétitions ; les valeurs valides des tours sont poolées. Un biais monotone (dérive
+thermique) apparaîtrait comme une différence entre tours (tags `round` dans le JSONL).
+
+### E1.1 Latence par pointer chasing
+- **Hypothèse** : plateaux L1/L2/L3/DRAM aux tailles de la spec.
+- **Principe** : cycle unique aléatoire (Sattolo, testé unitairement), un nœud par ligne de 64 o, adresse
+  suivante stockée dans le nœud ; noyau asm `ldr x, [x]` déroulé 16× (`kernels::chase`) ; 2^20 à 2^21 loads par
+  répétition ; tailles de 4 Kio à 1 Gio (×1,25 + puissances de 2). Groupe PMU de 7 compteurs : cycles,
+  L1D/L2D/L3D refill, LL_CACHE_MISS_RD, L1D_TLB_REFILL, DTLB_WALK.
+- **Biais** : (a) au-delà de ~128 Mio, une répétition ne parcourt qu'une fraction du cycle (2 M loads),
+  suffisant pour un régime stationnaire mais pas pour tester un motif ; (b) l'indexation L2/L3 dépend
+  des adresses physiques aléatoires : les capacités effectives paraissent plus floues ; (c) au-delà de
+  ~20 Mio, les page walks s'ajoutent à la latence DRAM ; (d) près des frontières, une répétition mélange
+  deux niveaux.
+- **Attente dérivée du code** : sans préchargement exploitable, L1 refill/load = 1 dès que la taille
+  dépasse L1 ; confirmé par PMU.
+
+### E1.2 TLB
+- **Principe** : un nœud par page de 16 Kio (taille lue par `sysconf`), ligne aléatoire dans la page (pour
+  ne pas aliaser les sets du L1D, dont la voie fait exactement 16 Kio) ; témoin « packed » : même nombre de
+  nœuds empaquetés. La différence paged − packed isole le coût de traduction quand le cache se comporte
+  de la même façon.
+- **Biais** : à N pages élevé, la répartition des lignes n'est pas identique entre les deux conditions
+  (L1 refill paged ≠ packed vers 1024–1280 pages) ; on n'interprète le coût de traduction que là où les
+  compteurs de refill de cache sont égaux (52–192 pages), ou avec correction explicite (4096, 6144 pages).
+- **Limite** : pas de hugepages ⇒ un seul granule (16 Kio).
+
+### E1.3 Bande passante
+- **Principe** : noyaux NEON `ldp q`/`stp q` (128 o par itération, 8 registres), tampon privé par cœur,
+  cible de 128 Mio de trafic par répétition et par cœur, threads épinglés (cœurs 1, 2, 3, 0), barrière de
+  départ, temps = du premier départ à la dernière fin (CNTVCT partagé). Avec 1 cœur : fenêtre PMU
+  (cycles, refills, BUS_ACCESS).
+- **Biais** : démarrage non simultané au µs près ; création des threads hors zone chronométrée ; le cœur 0
+  porte le bruit système ; « copie » compte lecture + écriture.
